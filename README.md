@@ -2,7 +2,7 @@
 
 [TransformerOCR's structure](images/art.png)
 
-This repository is inherited from the repository [https://github.com/fengxinjie/Transformer-OCR](https://github.com/fengxinjie/Transformer-OCR).
+This repository is inherited from the repository ![https://github.com/fengxinjie/Transformer-OCR](https://github.com/fengxinjie/Transformer-OCR).
 
 Link to the Vietnamese handwriting dataset: [https://github.com/hieunghia-pat/UIT-HWDB-dataset](https://github.com/hieunghia-pat/UIT-HWDB-dataset)
 
