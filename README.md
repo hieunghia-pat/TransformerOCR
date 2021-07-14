@@ -9,7 +9,7 @@ Link to the Vietnamese handwriting dataset: [https://github.com/hieunghia-pat/UI
 To evaluate the model, first download the chechpoint:
 
 ```bash
-wget -d checkpoints
+wget https://www.googleapis.com/drive/v3/files/1ApGhHBpce5dkGwoZdzGG_tzTgxz1edTs?alt=media&key=AIzaSyByxcJ3WXPaoh9qg4DoCGxrbxC5LyTQvug -d checkpoints
 ```
 
 then adjust the path to the test dataset in [validation.py](validation.py) and run

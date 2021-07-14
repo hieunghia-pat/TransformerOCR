@@ -1,0 +1,10 @@
+--2021-07-14 17:45:42--  https://www.googleapis.com/drive/v3/files/1ApGhHBpce5dkGwoZdzGG_tzTgxz1edTs?alt=media
+Resolving www.googleapis.com (www.googleapis.com)... 2404:6800:4003:c00::5f, 2404:6800:4003:c03::5f, 2404:6800:4003:c0f::5f, ...
+Connecting to www.googleapis.com (www.googleapis.com)|2404:6800:4003:c00::5f|:443... failed: Network is unreachable.
+Connecting to www.googleapis.com (www.googleapis.com)|2404:6800:4003:c03::5f|:443... failed: Network is unreachable.
+Connecting to www.googleapis.com (www.googleapis.com)|2404:6800:4003:c0f::5f|:443... failed: Network is unreachable.
+Connecting to www.googleapis.com (www.googleapis.com)|2404:6800:4003:c04::5f|:443... failed: Network is unreachable.
+Connecting to www.googleapis.com (www.googleapis.com)|74.125.24.95|:443... connected.
+HTTP request sent, awaiting response... 403 Forbidden
+2021-07-14 17:45:42 ERROR 403: Forbidden.
+
