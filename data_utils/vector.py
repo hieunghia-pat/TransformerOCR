@@ -5,8 +5,9 @@ from tqdm import tqdm
 import gzip
 import tarfile
 from urllib.request import urlretrieve
-from data_utils.utils import reporthook
+from utils import reporthook
 import zipfile
+from functools import partial
 
 logger = logging.getLogger(__name__)
 
@@ -210,7 +211,7 @@ class PhoW2V(Vectors):
 
     def __init__(self, name='word', dim=300, **kwargs):
         url = self.url[name]
-        name = 'glove.{}.{}d.txt'.format(name, str(dim))
+        name = '{}.{}d.txt'.format(name, str(dim))
         super(PhoW2V, self).__init__(name, url=url, **kwargs)
 
 class ViFastText(Vectors):
@@ -223,7 +224,7 @@ class ViFastText(Vectors):
         super(ViFastText, self).__init__(name, url=url, **kwargs)
 
 pretrained_aliases = {
-    "fasttext.vi.300d": ViFastText(),
-    "phow2v.syllable.100d": PhoW2V("syllable", 100),
-    "phow2v.syllable.300d": PhoW2V("syllable", 300),
+    "fasttext.vi.300d": partial(ViFastText),
+    "phow2v.syllable.100d": partial(PhoW2V, name="syllable", dim=100),
+    "phow2v.syllable.300d": partial(PhoW2V, name="syllable", dim=300),
 }

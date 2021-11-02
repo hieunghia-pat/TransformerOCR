@@ -1,9 +1,9 @@
 import torch
-from data_utils.vector import pretrained_aliases
-from collections import defaultdict
+from vector import pretrained_aliases
+from collections import defaultdict, Counter
 import logging
 import six
-from data_utils.vector import Vectors
+from vector import Vectors
 import os
 import json
 
@@ -21,8 +21,8 @@ class Vocab(object):
             numerical identifiers.
         itos: A list of token strings indexed by their numerical identifiers.
     """
-    def __init__(self, counter, max_size=None, min_freq=1, specials=['<pad>', "<sos>", "<eos>"],
-                 vectors=None, unk_init=None, vectors_cache=None, tokenizer=lambda s: s.strip().split(), embeddings=None):
+    def __init__(self, img_dir, out_level, max_size=None, min_freq=1, specials=['<pad>', "<sos>", "<eos>", "<unk>"],
+                 vectors=None, unk_init=None, vectors_cache=None):
         """Create a Vocab object from a collections.Counter.
         Arguments:
             counter: collections.Counter object holding the frequencies of
@@ -41,9 +41,10 @@ class Vocab(object):
                 to zero vectors; can be any function that takes in a Tensor and
                 returns a Tensor of the same size. Default: torch.Tensor.zero_
             vectors_cache: directory for cached vectors. Default: '.vector_cache'
-        """
-        self.freqs = counter
-        counter = counter.copy()
+        """ 
+        self.out_level = out_level
+        self.freqs = self.make_vocab(img_dir)
+        counter = self.freqs.copy()
         min_freq = max(min_freq, 1)
 
         self.itos = list(specials)
@@ -73,24 +74,24 @@ class Vocab(object):
         else:
             assert unk_init is None and vectors_cache is None
 
-    def load_data(self, img_dir):
+    def make_vocab(self, img_dir):
         splits = ["train_data", "test_data"]
-        chars = []
-        words = []
-        self.max_char = 2 # for <sos> and <eos>
-        self.max_word = 2 # for <sos> and <eos>
+        vocab_set = set()
+        counter = Counter()
         for split in splits:
             parent_folder = os.path.join(img_dir, split)
             for folder in os.listdir(parent_folder):
                 labels = json.load(open(os.path.join(parent_folder, folder, "label.json")))
-                for img_file, label in labels.items():
-                    chars += list(label)
-                    words += label.split()
-                    if self.max_char < len(list(label)):
-                        self.max_char = len(list(label))
-                    if self.max_word < len(label.split()):
-                        self.max_word = len(label.split)
-                    self.labels.append({"image": os.path.join(parent_folder, folder, img_file), "label": label})
+                for label in labels.values():
+                    label = label.strip()
+                    if self.out_level == "character":
+                        vocab_set.update(list(label))
+                        counter.update(list(label))
+                    else:
+                        vocab_set.update(label.split())
+                        counter.update(label.split())
+
+        return counter
 
     def __eq__(self, other):
         if self.freqs != other.freqs:

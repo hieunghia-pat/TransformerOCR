@@ -7,7 +7,7 @@ import logging
 import sys
 import zipfile
 import gzip
-import numpy as np 
+import numpy as np
 
 def reporthook(t):
     """
@@ -193,13 +193,37 @@ def _log_class_usage(klass):
         identifier += f".{klass.__name__}"
     torch._C._log_api_usage_once(identifier)
 
-def collate_fn(sample):
-    images, char_labels, word_labels = sample
-    images = torch.cat(images)
-    char_tensor = torch.cat(char_labels)
-    word_tensor = torch.cat(word_labels)
+def collate_fn(samples):
+    images = []
+    tokens = []
+    gts = []
+    for sample in samples:
+        image, token, gt = sample
+        images.append(image)
+        tokens.append(token)
+        gts.append(gt)
 
-    return images, char_tensor, word_tensor
+    max_w = 0
+    max_h = 0
+    for image in images:
+        h, w = image.shape[1:]
+        if max_w < w:
+            max_w = w
+        if max_h < h:
+            max_h = h
+
+    for idx in range(len(images)):
+        c, h, w = images[idx].shape
+        tmp_h = torch.tensor(np.ones((c, max_h - h, w), dtype=np.float32))
+        tmp_w = torch.tensor(np.ones((c, max_h, max_w - w), dtype=np.float32))
+        images[idx] = torch.cat([images[idx], tmp_h], dim=1)
+        images[idx] = torch.cat([images[idx], tmp_w], dim=-1)
+        images[idx].unsqueeze_(dim=0)
+    
+    images = torch.cat(images)
+    tokens_tensor = torch.cat([token.unsqueeze_(dim=0) for token in tokens])
+
+    return images, tokens_tensor, gts
 
 def subsequent_mask(size):
     "Mask out subsequent positions."
@@ -209,7 +233,7 @@ def subsequent_mask(size):
     return torch.from_numpy(subsequent_mask) == 0
 
 def make_std_mask(tgt, pad):
-        "Create a mask to hide padding and future words."
-        tgt_mask = (tgt != pad).unsqueeze(-2)
-        tgt_mask = tgt_mask & subsequent_mask(tgt.size(-1)).type_as(tgt_mask.data)
-        return tgt_mask
+    "Create a mask to hide padding and future words."
+    tgt_mask = (tgt != pad).unsqueeze(-2)
+    tgt_mask = tgt_mask & subsequent_mask(tgt.size(-1)).type_as(tgt_mask.data)
+    return tgt_mask
