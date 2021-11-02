@@ -1,6 +1,5 @@
 import torch
-from data_loader import ListDataset
-from data_loader import char2token
+
 from model import make_model
 from predict import validation
 
