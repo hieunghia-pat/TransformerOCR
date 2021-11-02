@@ -61,7 +61,7 @@ class DecoderLayer(nn.Module):
         x = self.sublayer[1](x, lambda x: self.src_attn(x, m, m, src_mask))
         return self.sublayer[2](x, self.feed_forward)
 
-def make_model(vocab, N=4, 
+def make_model(vocab_size, N=4, 
                d_model=256, d_ff=1024, d_feature=1024, h=8, dropout=0.1):
     "Helper: Construct a model from hyperparameters."
 
@@ -76,8 +76,8 @@ def make_model(vocab, N=4,
         Decoder(DecoderLayer(d_model, c(attn), c(attn), 
                              c(ff), dropout), N),
         nn.Sequential(FeatureExtractor(d_model, resnet, 'layer3', d_feature), c(position)),
-        nn.Sequential(Embeddings(d_model, vocab), c(position)),
-        Generator(d_model, len(vocab)))
+        nn.Sequential(Embeddings(d_model, vocab_size), c(position)),
+        Generator(d_model, vocab_size))
     
     for p in model.parameters():
         if p.dim() > 1:

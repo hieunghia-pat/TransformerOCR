@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import fastwer
 
-class MetricUtils:
+class Metrics(object):
     def __init__(self, vocab):
         self.vocab = vocab
 
@@ -12,53 +12,11 @@ class MetricUtils:
 
         return features
 
-    def beamsearch_decode(self, features):
+    def beamsearch_decode(self, logouts):
         pass 
 
     def encode(self, x):
-        x = list(x.numpy().flatten())
-        '''
-        while self.vocab.index("<s>") in x:
-            x.remove(self.vocab.index("<s>"))
-        while self.vocab.index("<e>") in x:
-            x.remove(self.vocab.index("<e>"))
-        while self.vocab.index("<p>") in x:
-            x.remove(self.vocab.index("<p>"))
-        '''
-        while self.vocab.index("<") in x:
-            x.remove(self.vocab.index("<"))
-        while self.vocab.index(">") in x:
-            x.remove(self.vocab.index(">"))
-        while self.vocab.index("PAD") in x:
-            x.remove(self.vocab.index("PAD"))
-        text = ""
-        for c in x:
-            c = int(c)
-            text += self.vocab[c]
-        return text
-
-    def features_to_string(self, features, decoder="greedy"):
-        if decoder == "greedy":
-            text = self.encode(self.greedy_decode(features))
-        else: 
-            text = self.encode(self.beamsearch_decode(features))
-
-        return text
-
-    def EditDistance(self, a, b):
-        m, n = len(a), len(b)
-        query_table = np.zeros(shape=(m+1, n+1))
-        query_table[0, :] = np.arange(0, n+1)
-        query_table[:, 0] = np.arange(0, m+1)
-        
-        for i in range(1, m+1):
-            for j in range(1, n+1):
-                if a[i-1] == b[j-1]:
-                    query_table[i, j] = query_table[i-1, j-1]
-                else: 
-                    query_table[i, j] = 1 + min(query_table[i-1, j], query_table[i, j-1], query_table[i-1, j-1])
-
-        return query_table[m, n]
+        return
 
     def er(self, labels, true_labels, mode):
         labels = labels.cpu()
