@@ -1,4 +1,4 @@
-## TransformerOCR for rerognizing handwriting text in Vietnamese
+## TransformerOCR for rerognizing handwritten text in Vietnamese
 
 ![TransformerOCR's structure](images/art.png)
 
