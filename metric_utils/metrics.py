@@ -9,20 +9,18 @@ class Metrics(object):
         error = 0
         if mode == "character":
             error += fastwer.score_sent(label,true_label, char_level=True)
-        else: 
+        else:
             error += fastwer.score_sent(label, true_label)
 
         return error
 
-    def get_scores(self, predicted, gts):
-        batch_size = predicted.shape[0]
+    def get_scores(self, predicteds, gts):
         cer = 0
         wer = 0
-        for batch_idx in range(batch_size):
-            predicted_label = " ".join(predicted[batch_idx])
-            gt_label = " ".join(gts[batch_idx])
-            cer += self.get_error(predicted_label, gt_label, mode="character")
-            wer += self.get_error(predicted_label, gt_label, mode="word")
+        batch_size = len(gts)
+        for predicted, gt in zip(predicteds, gts):
+            cer += self.get_error(predicted, gt, mode="character")
+            wer += self.get_error(predicted, gt, mode="word")
 
         return {
             "cer": cer / batch_size,

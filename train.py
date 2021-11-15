@@ -28,12 +28,12 @@ def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracke
         wer_tracker = tracker.track('{}_wer'.format(prefix), tracker_class(**tracker_params))
         
         for imgs, tokens in pbar:
-            batch = Batch(imgs, tokens, loader.vocab.stoi[loader.vocab.pad_token])
+            batch = Batch(imgs, tokens, loader.dataset.vocab.stoi[loader.dataset.vocab.pad_token])
             logprobs = model(batch.imgs, batch.tokens, batch.src_mask, batch.tokens_mask)
             loss = loss_compute(logprobs, batch.tokens, batch.ntokens)
             
-            outs = model.get_prediction(batch.imgs, batch.src_mask, loader.vocab, loader.max_len)
-            scores = metric.get_scores(loader.vocab.decode_sentence(outs.cpu), loader.vocab.decode_sentence(tokens.cpu()))
+            outs = model.get_predictions(batch.imgs, batch.src_mask, loader.dataset.vocab, loader.dataset.max_len)
+            scores = metric.get_scores(loader.dataset.vocab.decode_sentence(outs.cpu), loader.dataset.vocab.decode_sentence(tokens.cpu()))
 
             loss_tracker.append(loss.item())
             wer_tracker.append(scores["wer"])
@@ -68,7 +68,7 @@ def train():
     criterion = LabelSmoothing(size=len(vocab.stoi), padding_idx=0, smoothing=config.smoothing)
     criterion.cuda()
     model_opt = NoamOpt(model.tgt_embed[0].d_model, 1, 2000,
-            torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9))
+            torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9)).cuda()
 
     folds = dataset.get_folds()
     for stage in range(len(folds)):

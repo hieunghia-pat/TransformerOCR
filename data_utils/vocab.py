@@ -68,6 +68,10 @@ class Vocab(object):
         # stoi is simply a reverse dict for itos
         self.stoi.update({tok: i for i, tok in enumerate(self.itos)})
 
+        self.pad_idx = self.stoi[self.pad_token]
+        self.sos_idx = self.stoi[self.sos_token]
+        self.eos_idx = self.stoi[self.eos_token]
+
         self.vectors = None
         if vectors is not None:
             self.load_vectors(vectors, unk_init=unk_init, cache=vectors_cache)
@@ -100,7 +104,11 @@ class Vocab(object):
         sentences = []
         batch_size = tokens.shape[0]
         for batch_idx in range(batch_size):
-            sentence = [self.itos[token] for token in tokens[batch_idx].tolist() if token not in [self.pad_token, self.sos_token, self.eos_token]]
+            sentence = [self.itos[token] for token in tokens[batch_idx].tolist() if token not in [self.pad_idx, self.sos_idx, self.eos_idx]]
+            if self.out_level == "character":
+                sentence = "".join(sentence)
+            else:
+                sentence = " ".join(sentence)
             sentences.append(sentence)
 
         return sentences

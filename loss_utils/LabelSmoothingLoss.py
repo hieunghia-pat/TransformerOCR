@@ -32,7 +32,7 @@ class LabelSmoothing(nn.Module):
     "Implement label smoothing."
     def __init__(self, size, padding_idx=0, smoothing=0.0):
         super(LabelSmoothing, self).__init__()
-        self.criterion = nn.KLDivLoss(size_average=False)
+        self.criterion = nn.KLDivLoss(reduction="batchmean")
         self.padding_idx = padding_idx
         self.confidence = 1.0 - smoothing
         self.smoothing = smoothing
@@ -59,7 +59,6 @@ class SimpleLossCompute:
         self.opt = opt
         
     def __call__(self, x, y, norm):
-        x = self.generator(x)
         loss = self.criterion(x.contiguous().view(-1, x.size(-1)), 
                               y.contiguous().view(-1)) / norm
         if self.opt is not None:

@@ -54,7 +54,7 @@ class OCRDataset(Dataset):
         # As pytorch tensor
         img = torch.from_numpy(img).float()
 
-        tokens = torch.ones(self.max_len, dtype=int) * self.vocab.stoi[self.vocab.pad_token]
+        tokens = torch.ones(self.max_len, dtype=int) * self.vocab.pad_idx
         for idx, token in enumerate([self.vocab.sos_token] + label + [self.vocab.eos_token]):
             tokens[idx] = self.vocab.stoi[token]
         
@@ -90,7 +90,7 @@ class Batch:
     "Object for holding a batch of data with mask during training."
     def __init__(self, imgs, tokens, pad=0):
         self.imgs = imgs.cuda()
-        self.src_mask = torch.from_numpy(np.ones([imgs.size(0), 1, 32], dtype=np.bool)).cuda()
+        self.src_mask = None
         self.tokens = tokens.cuda()
         self.tokens_mask = make_std_mask(self.tokens, pad)
         self.ntokens = (self.tokens != pad).sum()
