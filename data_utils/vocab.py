@@ -1,9 +1,8 @@
 import torch
-from vector import pretrained_aliases
+from data_utils.vector import Vectors, pretrained_aliases
 from collections import defaultdict, Counter
 import logging
 import six
-from vector import Vectors
 import os
 import json
 
@@ -21,7 +20,7 @@ class Vocab(object):
             numerical identifiers.
         itos: A list of token strings indexed by their numerical identifiers.
     """
-    def __init__(self, img_dir, out_level, max_size=None, min_freq=1, specials=['<pad>', "<sos>", "<eos>", "<unk>"],
+    def __init__(self, img_dir, out_level, max_size=None, min_freq=1, specials=['<pad>', "<sos>", "<eos>"],
                  vectors=None, unk_init=None, vectors_cache=None):
         """Create a Vocab object from a collections.Counter.
         Arguments:
@@ -47,6 +46,7 @@ class Vocab(object):
         counter = self.freqs.copy()
         min_freq = max(min_freq, 1)
 
+        self.pad_token, self.sos_token, self.eos_token = specials
         self.itos = list(specials)
         # frequencies of special tokens are not counted when building vocabulary
         # in frequency order
@@ -92,6 +92,18 @@ class Vocab(object):
                         counter.update(label.split())
 
         return counter
+
+    def encode_sentence(self, sentence):
+        return [self.stoi[token] for token in sentence]
+
+    def decode_sentence(self, tokens):
+        sentences = []
+        batch_size = tokens.shape[0]
+        for batch_idx in range(batch_size):
+            sentence = [self.itos[token] for token in tokens[batch_idx].tolist() if token not in [self.pad_token, self.sos_token, self.eos_token]]
+            sentences.append(sentence)
+
+        return sentences
 
     def __eq__(self, other):
         if self.freqs != other.freqs:

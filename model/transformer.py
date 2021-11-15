@@ -1,10 +1,14 @@
+import torch
 import torch.nn as nn
 import copy
 from torchvision import models
-from model.utils import clones, SublayerConnection, PositionwiseFeedForward, PositionalEncoding, FeatureExtractor, Generator, Embeddings
+from data_utils.utils import subsequent_mask
+from model.utils import clones, SublayerConnection, PositionwiseFeedForward, FeatureExtractor
+from model.embedding import Embeddings, PositionalEncoding
 from model.encoder import Encoder
 from model.decoder import Decoder
 from model.attention import MultiHeadedAttention
+from model.generator import Generator
 
 class EncoderDecoder(nn.Module):
     """
@@ -29,6 +33,20 @@ class EncoderDecoder(nn.Module):
     
     def decode(self, memory, src_mask, tgt, tgt_mask):
         return self.decoder(self.tgt_embed(tgt), memory, src_mask, tgt_mask)
+
+    def get_predictions(self, images, src_mask, vocab, max_len):
+        encoded_features = self.encode(images, src_mask)
+        batch_size = images.shape[0]
+        
+        ys = torch.ones(size=(batch_size, 1)).fill_(vocab.sos_token).long().cuda()
+        for it in range(max_len):
+            tgt_mask = subsequent_mask(ys.shape[-1]).long().cuda()
+            outs = self.decode(encoded_features, src_mask, ys, tgt_mask)
+            outs = self.generator(outs[:, -1])
+            outs = outs.argmax(dim=-1)
+            ys = torch.cat(ys, outs, dim=1)
+        
+        return ys
 
 class EncoderLayer(nn.Module):
     "Encoder is made up of self-attn and feed forward (defined below)"

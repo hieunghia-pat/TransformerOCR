@@ -5,7 +5,7 @@ from tqdm import tqdm
 import gzip
 import tarfile
 from urllib.request import urlretrieve
-from utils import reporthook
+from data_utils.utils import reporthook
 import zipfile
 from functools import partial
 

@@ -1,35 +1,37 @@
-from typing import Tuple
+from typing import List
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, random_split, DataLoader
 import os
 import cv2 as cv
 import numpy as np
 import os
 import json
-from split import Split
-from utils import collate_fn, make_std_mask
-from vocab import Vocab
+
+from torch.utils.data.dataloader import DataLoader
+from data_utils.utils import collate_fn, make_std_mask, preprocess_sentence
+from data_utils.vocab import Vocab
+
+import config
 
 class OCRDataset(Dataset):
     def __init__(self, dir, image_size, out_level, vocab=None):
         super(OCRDataset, self).__init__()
         self.size = image_size
         self.out_level = out_level
-        self.labels =  []
         self.vocab = vocab if vocab is not None else Vocab(dir, out_level)
         self.get_groundtruth(dir)
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.samples)
     
     def __getitem__(self, index):
         '''
-        labels: [{"image": image file, "tokens": ["B", "a", "o", " ", "g", "ồ", "m"], "gt": "Bao gồm"}, ... ]
+        samples: [{"image": image file, "tokens": ["B", "a", "o", " ", "g", "ồ", "m"], "gt": "Bao gồm"}, ... ]
         '''
 
-        label = self.labels[index]
-        img_path, tokens, gt = label["image"], label["tokens"], label["gt"]
+        sample = self.samples[index]
+        img_path, label = sample["image"], sample["label"]
         img = cv.imread(img_path)
 
         img = img / 255.
@@ -52,54 +54,46 @@ class OCRDataset(Dataset):
         # As pytorch tensor
         img = torch.from_numpy(img).float()
 
-        tokens = np.zeros(self.max_len, dtype=int)
-        if self.out_level == "word":
-            for i, w in enumerate(['<sos>'] + gt.split() + ["<eos>"]):
-                tokens[i] = self.vocab.stoi[w]
-        else:
-            for i, w in enumerate(['<sos>'] + list(gt) + ["<eos>"]):
-                tokens[i] = self.vocab.stoi[w]
-        tokens = torch.from_numpy(tokens)
+        tokens = torch.ones(self.max_len, dtype=int) * self.vocab.stoi[self.vocab.pad_token]
+        for idx, token in enumerate([self.vocab.sos_token] + label + [self.vocab.eos_token]):
+            tokens[idx] = self.vocab.stoi[token]
         
-        return img, tokens, gt
+        return img, tokens
 
     def get_groundtruth(self, img_dir):
         self.max_len = 0
-        self.labels = []
+        self.samples = []
 
         for folder in os.listdir(img_dir):
             labels = json.load(open(os.path.join(img_dir, folder, "label.json")))
             for img_file, label in labels.items():
-                label = label.strip()
-                if self.vocab.out_level == "character":
-                    self.labels.append({"image": os.path.join(img_dir, folder, img_file), "tokens": list(label), "gt": label})
-                    if self.max_len < len(list(label)):
-                        self.max_len = len(list(label))
-                else:
-                    label = label.split()
-                    self.labels.append({"image": os.path.join(img_dir, folder, img_file), "tokens": label.split(), "gt": label})
-                    if self.max_len < len(label.split()):
-                        self.max_len = len(label.split())
+                label = preprocess_sentence(label, self.vocab.out_level)
+                self.samples.append({"image": os.path.join(img_dir, folder, img_file), "label": label})
+                if self.max_len < len(label):
+                    self.max_len = len(label)
 
-    def split_dataset(self) -> Tuple[Split]:
-        trainsize = len(self.labels) * 0.8
-        train_idx = np.random.sample(low=0, high=len(self.labels), size=(trainsize, )).tolist()
-        val_idx = [i for i in range(0, len(self.labels)) if i not in train_idx]
+    def get_folds(self, k=5) -> List[DataLoader]:
+        fold_size = len(self) // 5
+        splits = [fold_size]*(k-1) + [len(self) - fold_size*(k-1)]
+        subdatasets = random_split(self, splits, torch.Generator().manual_seed(13))
 
-        train_split = [self[idx] for idx in train_idx]
-        val_split = [self[idx] for idx in val_idx]
+        loaders = []
+        for subdataset in subdatasets:
+            loaders.append(DataLoader(subdataset, 
+                                        batch_size=config.batch_size, 
+                                        shuffle=True, 
+                                        collate_fn=collate_fn))
 
-        return train_split, val_split
+        return loaders
 
 class Batch:
     "Object for holding a batch of data with mask during training."
-    def __init__(self, imgs, tokens, trg, pad=0):
+    def __init__(self, imgs, tokens, pad=0):
         self.imgs = imgs.cuda()
         self.src_mask = torch.from_numpy(np.ones([imgs.size(0), 1, 32], dtype=np.bool)).cuda()
-        if trg is not None:
-            self.tokens = tokens.cuda()
-            self.tokens_mask = make_std_mask(self.tokens, pad)
-            self.ntokens = (self.tokens != pad).sum()
+        self.tokens = tokens.cuda()
+        self.tokens_mask = make_std_mask(self.tokens, pad)
+        self.ntokens = (self.tokens != pad).sum()
 
 class FeatureExtractor(nn.Module):
     def __init__(self, submodule, name):
@@ -116,15 +110,3 @@ class FeatureExtractor(nn.Module):
                 return x.view(b, c, -1).permute(0, 2, 1)
         
         return None
-
-if __name__=='__main__':
-    vocab = Vocab("/home/nguyennghiauit/Projects/synthesis_handwritting_creator/UIT_HWDB_word", out_level="character")
-    listdataset = OCRDataset("/home/nguyennghiauit/Projects/synthesis_handwritting_creator/UIT_HWDB_word/train_data", 
-        image_size=(128, -1), out_level="char", vocab=vocab)
-    dataloader = torch.utils.data.DataLoader(listdataset, batch_size=2, shuffle=True, num_workers=0, collate_fn=collate_fn)
-    for epoch in range(1):
-        for batch_i, (imgs, tokens, gts) in enumerate(dataloader):
-            print(imgs.shape)
-            print(tokens)
-            print(gts)
-            print("+"*10)

@@ -8,6 +8,7 @@ import sys
 import zipfile
 import gzip
 import numpy as np
+import re
 
 def reporthook(t):
     """
@@ -58,15 +59,6 @@ def validate_file(file_obj, hash_value, hash_type="sha256"):
             break
         hash_func.update(chunk)
     return hash_func.hexdigest() == hash_value
-
-
-def _check_hash(path, hash_value, hash_type):
-    logging.info('Validating hash {} matches hash of {}'.format(hash_value, path))
-    with open(path, "rb") as file_obj:
-        if not validate_file(file_obj, hash_value, hash_type):
-            raise RuntimeError("The hash of {} does not match. Delete the file manually and retry.".format(os.path.abspath(path)))
-
-
 
 def unicode_csv_reader(unicode_csv_data, **kwargs):
     r"""Since the standard csv library does not handle unicode in Python 2, we need a wrapper.
@@ -187,21 +179,14 @@ def extract_archive(from_path, to_path=None, overwrite=False):
         raise NotImplementedError(
             "We currently only support tar.gz, .tgz, .gz and zip achives.")
 
-def _log_class_usage(klass):
-    identifier = "torchtext"
-    if klass and hasattr(klass, "__name__"):
-        identifier += f".{klass.__name__}"
-    torch._C._log_api_usage_once(identifier)
-
 def collate_fn(samples):
     images = []
     tokens = []
-    gts = []
+
     for sample in samples:
-        image, token, gt = sample
+        image, token= sample
         images.append(image)
         tokens.append(token)
-        gts.append(gt)
 
     max_w = 0
     max_h = 0
@@ -221,9 +206,17 @@ def collate_fn(samples):
         images[idx].unsqueeze_(dim=0)
     
     images = torch.cat(images)
-    tokens_tensor = torch.cat([token.unsqueeze_(dim=0) for token in tokens])
+    tokens_tensor = torch.cat([token.unsqueeze(0) for token in tokens], dim=0)
 
-    return images, tokens_tensor, gts
+    return images, tokens_tensor
+
+def preprocess_sentence(sentence, level="character"):
+    if level == "character":
+        tokens = list(sentence.strip())
+    else:
+        tokens = sentence.strip().split()
+
+    return tokens
 
 def subsequent_mask(size):
     "Mask out subsequent positions."
