@@ -2,6 +2,7 @@
 batch_size = 64
 out_level = "character"
 image_dir = ""
+image_size = (-1, 128)
 
 ## training configuration
 max_epoch = 100
