@@ -65,11 +65,6 @@ def train():
     
     model = make_model(len(vocab.stoi), N=config.num_layers, d_model=config.d_model, d_ff=config.dff, 
                             h=config.heads, dropout=config.dropout)
-    if config.start_from is not None:
-        saved_info = torch.load(config.start_from)
-        model.load_state_dict(saved_info["state_dict"])
-        from_stage = saved_info["stage"] + 1
-        from_epoch = saved_info["epoch"] + 1
 
     model.cuda()
     criterion = LabelSmoothing(size=len(vocab.stoi), padding_idx=vocab.padding_idx, smoothing=config.smoothing)
@@ -77,12 +72,24 @@ def train():
     model_opt = NoamOpt(model.tgt_embed[0].d_model, 1, 2000,
             torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9))
 
-    folds = train_dataset.get_folds()
+    if config.start_from is not None:
+        saved_info = torch.load(config.start_from)
+        model.load_state_dict(saved_info["state_dict"])
+        from_stage = saved_info["stage"] + 1
+        from_epoch = saved_info["epoch"] + 1
+        model.load_state_dict(saved_info["state_dict"])
+        model_opt = saved_info["model_opt"]
+        folds = saved_info["folds"]
+    else:
+        from_state = 0
+        from_epoch = 0
+        folds = train_dataset.get_folds()
+
     test_dataloder = DataLoader(test_dataset, 
                                 batch_size=config.batch_size, 
                                 shuffle=True, 
                                 collate_fn=collate_fn)
-    for stage in range(len(folds)):
+    for stage in range(from_state, len(folds)):
         best_scores = {
                 "cer": 0,
                 "wer": 0
@@ -93,12 +100,12 @@ def train():
             "wer": 0
         }
 
-        for epoch in range(config.max_epoch):
+        for epoch in range(from_epoch, config.max_epoch):
             run_epoch(folds[:-1], True, "Training", epoch, model, 
                 SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
             val_scores = run_epoch([folds[-1]], False, "Validation", epoch, model, 
                 SimpleLossCompute(model.generator, criterion, None), metric, tracker)
-            test_scores = run_epoch([folds[-1]], False, "Evaluation", epoch, model, 
+            test_scores = run_epoch([test_dataloder], False, "Evaluation", epoch, model, 
                 SimpleLossCompute(model.generator, criterion, None), metric, tracker)
 
             if best_scores["cer"] < val_scores["cer"]:
@@ -111,6 +118,7 @@ def train():
                     "folds": folds,
                     "vocab": vocab,
                     "state_dict": model.state_dict(),
+                    "model_opt": model_opt,
                     "val_scores": val_scores,
                     "test_scores": test_scores,
                 }, os.path.join(config.checkpoint_path, f"best_model_stage_{stage+1}.pth"))
@@ -121,6 +129,7 @@ def train():
                 "folds": folds,
                 "vocab": vocab,
                 "state_dict": model.state_dict(),
+                "model_opt": model_opt,
                 "val_scores": val_scores,
                 "test_scores": test_scores,
             }, os.path.join(config.checkpoint_path, f"last_model_stage_{stage+1}.pth"))
