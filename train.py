@@ -28,7 +28,7 @@ def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracke
         wer_tracker = tracker.track('{}_wer'.format(prefix), tracker_class(**tracker_params))
         
         for imgs, tokens in pbar:
-            batch = Batch(imgs, tokens, loader.dataset.vocab.stoi[loader.dataset.vocab.padding_token])
+            batch = Batch(imgs, tokens, loader.dataset.vocab.padding_idx)
             logprobs = model(batch.imgs, batch.tokens, batch.src_mask, batch.tokens_mask)
             loss = loss_compute(logprobs, batch.tokens, batch.ntokens)
             
