@@ -22,18 +22,19 @@ def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracke
         tracker_class, tracker_params = tracker.MeanMonitor, {}
 
     for loader in loaders:
+        dataset = loader.dataset.dataset
         pbar = tqdm(loader, desc='Epoch {} - {} - Fold {}'.format(epoch+1, prefix, loaders.index(loader)+1), unit='it', ncols=0)
         loss_tracker = tracker.track('{}_loss'.format(prefix), tracker_class(**tracker_params))
         cer_tracker = tracker.track('{}_cer'.format(prefix), tracker_class(**tracker_params))
         wer_tracker = tracker.track('{}_wer'.format(prefix), tracker_class(**tracker_params))
         
         for imgs, tokens in pbar:
-            batch = Batch(imgs, tokens, loader.dataset.vocab.padding_idx)
+            batch = Batch(imgs, tokens, dataset.vocab.padding_idx)
             logprobs = model(batch.imgs, batch.tokens, batch.src_mask, batch.tokens_mask)
             loss = loss_compute(logprobs, batch.tokens, batch.ntokens)
             
-            outs = model.get_predictions(batch.imgs, batch.src_mask, loader.dataset.vocab, loader.dataset.max_len)
-            scores = metric.get_scores(loader.dataset.vocab.decode_sentence(outs.cpu), loader.dataset.vocab.decode_sentence(tokens.cpu()))
+            outs = model.get_predictions(batch.imgs, batch.src_mask, dataset.vocab, dataset.max_len)
+            scores = metric.get_scores(dataset.vocab.decode_sentence(outs.cpu), dataset.vocab.decode_sentence(tokens.cpu()))
 
             loss_tracker.append(loss.item())
             wer_tracker.append(scores["wer"])
