@@ -5,6 +5,7 @@ import logging
 import six
 import os
 import json
+import pickle
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,8 @@ class Vocab(object):
             self.load_vectors(vectors, unk_init=unk_init, cache=vectors_cache)
         else:
             assert unk_init is None and vectors_cache is None
+
+        pickle.dump(self, open(f"vocab_{self.out_level}.pkl", "wb"))
 
     def make_vocab(self, img_dir):
         splits = ["train_data", "test_data"]

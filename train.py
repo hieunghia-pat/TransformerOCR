@@ -66,7 +66,11 @@ def train():
     model = make_model(len(vocab.stoi), N=config.num_layers, d_model=config.d_model, d_ff=config.dff, 
                             h=config.heads, dropout=config.dropout)
     if config.start_from is not None:
-        model.load_state_dict(torch.load(config.start_from))
+        saved_info = torch.load(config.start_from)
+        model.load_state_dict(saved_info["state_dict"])
+        from_stage = saved_info["stage"] + 1
+        from_epoch = saved_info["epoch"] + 1
+
     model.cuda()
     criterion = LabelSmoothing(size=len(vocab.stoi), padding_idx=vocab.padding_idx, smoothing=config.smoothing)
     criterion.cuda()
@@ -102,12 +106,20 @@ def train():
                 best_scores["wer"] = val_scores["wer"]
                 scores_on_test = test_scores
                 torch.save({
+                    "stage": stage,
+                    "epoch": epoch,
+                    "folds": folds,
+                    "vocab": vocab,
                     "state_dict": model.state_dict(),
                     "val_scores": val_scores,
                     "test_scores": test_scores,
                 }, os.path.join(config.checkpoint_path, f"best_model_stage_{stage+1}.pth"))
 
             torch.save({
+                "stage": stage,
+                "epoch": epoch,
+                "folds": folds,
+                "vocab": vocab,
                 "state_dict": model.state_dict(),
                 "val_scores": val_scores,
                 "test_scores": test_scores,
