@@ -81,7 +81,7 @@ def train():
         model_opt = saved_info["model_opt"]
         folds = saved_info["folds"]
     else:
-        from_state = 0
+        from_stage = 0
         from_epoch = 0
         folds = train_dataset.get_folds()
 
@@ -89,7 +89,7 @@ def train():
                                 batch_size=config.batch_size, 
                                 shuffle=True, 
                                 collate_fn=collate_fn)
-    for stage in range(from_state, len(folds)):
+    for stage in range(from_stage, len(folds)):
         best_scores = {
                 "cer": 0,
                 "wer": 0
