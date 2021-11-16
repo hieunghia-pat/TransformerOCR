@@ -56,7 +56,7 @@ def train():
     else:
         vocab = pickle.load(open(f"vocab_{config.out_level}.pkl", "rb"))
 
-    dataset = OCRDataset(os.path.join(config.image_dir, "train_data"), image_size=(-1, 64), out_level=config.out_level, vocab=vocab)
+    dataset = OCRDataset(dir=os.path.join(config.image_dir, "train_data"), image_size=(-1, 64), out_level=config.out_level, vocab=vocab)
     metric = Metrics(vocab)
     tracker = Tracker()
     
