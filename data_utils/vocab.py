@@ -68,7 +68,7 @@ class Vocab(object):
         # stoi is simply a reverse dict for itos
         self.stoi.update({tok: i for i, tok in enumerate(self.itos)})
 
-        self.padding_idx = self.stoi[self.pad_token]
+        self.padding_idx = self.stoi[self.padding_token]
         self.sos_idx = self.stoi[self.sos_token]
         self.eos_idx = self.stoi[self.eos_token]
 
