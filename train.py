@@ -34,7 +34,7 @@ def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracke
             loss = loss_compute(logprobs, batch.tokens, batch.ntokens)
             
             outs = model.get_predictions(batch.imgs, batch.src_mask, dataset.vocab, dataset.max_len)
-            scores = metric.get_scores(dataset.vocab.decode_sentence(outs.cpu), dataset.vocab.decode_sentence(tokens.cpu()))
+            scores = metric.get_scores(dataset.vocab.decode_sentence(outs.cpu()), dataset.vocab.decode_sentence(tokens.cpu()))
 
             loss_tracker.append(loss.item())
             wer_tracker.append(scores["wer"])
