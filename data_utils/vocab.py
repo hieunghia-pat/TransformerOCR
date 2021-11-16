@@ -46,7 +46,7 @@ class Vocab(object):
         counter = self.freqs.copy()
         min_freq = max(min_freq, 1)
 
-        self.pad_token, self.sos_token, self.eos_token = specials
+        self.padding_token, self.sos_token, self.eos_token = specials
         self.itos = list(specials)
         # frequencies of special tokens are not counted when building vocabulary
         # in frequency order
@@ -68,7 +68,7 @@ class Vocab(object):
         # stoi is simply a reverse dict for itos
         self.stoi.update({tok: i for i, tok in enumerate(self.itos)})
 
-        self.pad_idx = self.stoi[self.pad_token]
+        self.padding_idx = self.stoi[self.pad_token]
         self.sos_idx = self.stoi[self.sos_token]
         self.eos_idx = self.stoi[self.eos_token]
 
@@ -104,7 +104,7 @@ class Vocab(object):
         sentences = []
         batch_size = tokens.shape[0]
         for batch_idx in range(batch_size):
-            sentence = [self.itos[token] for token in tokens[batch_idx].tolist() if token not in [self.pad_idx, self.sos_idx, self.eos_idx]]
+            sentence = [self.itos[token] for token in tokens[batch_idx].tolist() if token not in [self.padding_idx, self.sos_idx, self.eos_idx]]
             if self.out_level == "character":
                 sentence = "".join(sentence)
             else:

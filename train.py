@@ -56,7 +56,7 @@ def train():
     else:
         vocab = pickle.load(open(f"vocab_{config.out_level}.pkl", "rb"))
 
-    dataset = OCRDataset(os.path.join(config.image_dir, "train_data"), image_size=(-1, 64))
+    dataset = OCRDataset(os.path.join(config.image_dir, "train_data"), image_size=(-1, 64), out_level=config.out_level, vocab=vocab)
     metric = Metrics(vocab)
     tracker = Tracker()
     
@@ -65,10 +65,10 @@ def train():
     if config.start_from is not None:
         model.load_state_dict(torch.load(config.start_from))
     model.cuda()
-    criterion = LabelSmoothing(size=len(vocab.stoi), padding_idx=0, smoothing=config.smoothing)
+    criterion = LabelSmoothing(size=len(vocab.stoi), padding_idx=vocab.padding_idx, smoothing=config.smoothing)
     criterion.cuda()
     model_opt = NoamOpt(model.tgt_embed[0].d_model, 1, 2000,
-            torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9)).cuda()
+            torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9))
 
     folds = dataset.get_folds()
     for stage in range(len(folds)):

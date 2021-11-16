@@ -54,7 +54,7 @@ class OCRDataset(Dataset):
         # As pytorch tensor
         img = torch.from_numpy(img).float()
 
-        tokens = torch.ones(self.max_len, dtype=int) * self.vocab.pad_idx
+        tokens = torch.ones(self.max_len, dtype=int) * self.vocab.padding_idx
         for idx, token in enumerate([self.vocab.sos_token] + label + [self.vocab.eos_token]):
             tokens[idx] = self.vocab.stoi[token]
         
