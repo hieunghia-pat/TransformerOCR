@@ -69,8 +69,8 @@ class OCRDataset(Dataset):
             for img_file, label in labels.items():
                 label = preprocess_sentence(label, self.vocab.out_level)
                 self.samples.append({"image": os.path.join(img_dir, folder, img_file), "label": label})
-                if self.max_len < len(label):
-                    self.max_len = len(label)
+                if self.max_len < len(label) + 2:
+                    self.max_len = len(label) + 2
 
     def get_folds(self, k=5) -> List[DataLoader]:
         fold_size = len(self) // 5
