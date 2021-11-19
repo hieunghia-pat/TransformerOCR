@@ -28,6 +28,10 @@ def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracke
         loss_tracker = tracker.track('{}_loss'.format(prefix), tracker_class(**tracker_params))
         cer_tracker = tracker.track('{}_cer'.format(prefix), tracker_class(**tracker_params))
         wer_tracker = tracker.track('{}_wer'.format(prefix), tracker_class(**tracker_params))
+        acc_tracker = tracker.track('{}_acc'.format(prefix), tracker_class(**tracker_params))
+        prec_tracker = tracker.track('{}_prec'.format(prefix), tracker_class(**tracker_params))
+        rec_tracker = tracker.track('{}_rec'.format(prefix), tracker_class(**tracker_params))
+        f1_tracker = tracker.track('{}_f1'.format(prefix), tracker_class(**tracker_params))
         
         for imgs, tokens in pbar:
             batch = Batch(imgs, tokens, dataset.vocab.padding_idx)
@@ -40,10 +44,15 @@ def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracke
             loss_tracker.append(loss.item())
             wer_tracker.append(scores["wer"])
             cer_tracker.append(scores["cer"])
+            acc_tracker.append(scores["accuracy"])
+            prec_tracker.append(scores["precision"])
+            rec_tracker.append(scores["recall"])
+            f1_tracker.append(scores["f1"])
 
             fmt = '{:.4f}'.format
             pbar.set_postfix(loss=fmt(loss_tracker.mean.value), cer=fmt(cer_tracker.mean.value), 
-                        wer=fmt(wer_tracker.mean.value))
+                        wer=fmt(wer_tracker.mean.value), accuracy=fmt(acc_tracker.mean.value), precision=fmt(prec_tracker.mean.value),
+                        recall=fmt(rec_tracker.mean.value), f1=fmt(f1_tracker.mean.value))
             pbar.update()
             
         if not train:
@@ -92,12 +101,20 @@ def train():
     for stage in range(from_stage, len(folds)):
         best_scores = {
                 "cer": 0,
-                "wer": 0
+                "wer": 0,
+                "acc": 0,
+                "prec": 0,
+                "rec": 0,
+                "f1": 0
         }
 
         scores_on_test = {
             "cer": 0,
-            "wer": 0
+            "wer": 0,
+            "acc": 0,
+            "prec": 0,
+            "rec": 0,
+            "f1": 0
         }
 
         for epoch in range(from_epoch, config.max_epoch):
@@ -109,8 +126,7 @@ def train():
                 SimpleLossCompute(model.generator, criterion, None), metric, tracker)
 
             if best_scores["cer"] < val_scores["cer"]:
-                best_scores["cer"] = val_scores["cer"]
-                best_scores["wer"] = val_scores["wer"]
+                best_scores = val_scores
                 scores_on_test = test_scores
                 torch.save({
                     "stage": stage,
@@ -136,7 +152,7 @@ def train():
 
             print("*"*13)
 
-        print(f"Stage {stage+1} completed. Scores on test set: CER = {scores_on_test['cer']} - WER = {scores_on_test['wer']}")
+        print(f"Stage {stage+1} completed. Scores on test set: CER = {scores_on_test['cer']} - WER = {scores_on_test['wer']} - Acc. = {scores_on_test['accuracy']} - Prec. = {scores_on_test['precision']} - Rec. = {scores_on_test['recall']} - F1 = {scores_on_test['f1']}.")
         print("="*23)
 
         # swapping folds
