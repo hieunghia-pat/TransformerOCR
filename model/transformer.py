@@ -45,6 +45,13 @@ class EncoderDecoder(nn.Module):
             outs = self.generator(outs[:, -1])
             outs = outs.argmax(dim=-1, keepdim=True)
             ys = torch.cat([ys, outs], dim=1)
+
+        # refine the outputs
+        for batch_idx in range(ys.size(0)):
+            idx = 0
+            while ys[batch_idx, idx] != vocab.eos_idx and idx < ys.size(1)-1:
+                idx += 1
+            ys[batch_idx, idx+1:] = vocab.padding_idx
         
         return ys
 

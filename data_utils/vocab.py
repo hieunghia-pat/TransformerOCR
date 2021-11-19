@@ -107,12 +107,12 @@ class Vocab(object):
         sentences = []
         batch_size = tokens.shape[0]
         for batch_idx in range(batch_size):
-            sentence = [self.itos[token] for token in tokens[batch_idx].tolist()]
+            sentence = [self.itos[token] for token in tokens[batch_idx].tolist() if token not in [self.padding_idx, self.sos_idx, self.eos_idx]]
             if self.out_level == "character":
                 sentence = "".join(sentence)
             else:
                 sentence = " ".join(sentence)
-            sentences.append(sentence)
+            sentences.append(sentence.strip())
 
         return sentences
 

@@ -7,7 +7,7 @@ image_size = (-1, 128)
 ## training configuration
 max_epoch = 100
 learning_rate = 5e-5
-checkpoint_path = ""
+checkpoint_path = "saved_models"
 start_from = None
 
 ## model configuration
