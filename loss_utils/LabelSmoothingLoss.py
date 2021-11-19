@@ -65,4 +65,4 @@ class SimpleLossCompute:
             loss.backward()
             self.opt.step()
             self.opt.optimizer.zero_grad()
-        return loss.data * norm
+        return loss
