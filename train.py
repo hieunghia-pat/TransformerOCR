@@ -54,12 +54,13 @@ def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracke
                 current_cer = cer_tracker.mean.value
                 if current_cer > prev_cer:
                     patients += 1
+                elif current_cer <= prev_cer and patients > 0:
+                    patients -= 1
                 prev_cer = current_cer
 
                 if patients > config.maximum_patients:
                     torch.save({
                         "training_folds": loaders,
-                        "vocab": loader.vocab,
                         "state_dict": model.state_dict(),
                     "model_opt": loss_compute.criterion,
                     }, os.path.join(config.checkpoint_path, f"last_model.pth"))
