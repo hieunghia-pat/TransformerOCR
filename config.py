@@ -20,3 +20,7 @@ beam_size = 2
 
 ## objective function configuration
 smoothing = 0.3
+
+## configure for debug only
+debug = True
+maximum_patients = 5

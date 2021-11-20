@@ -22,6 +22,11 @@ def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracke
         model.eval()
         tracker_class, tracker_params = tracker.MeanMonitor, {}
 
+    if config.debug and train:
+        patients = 0
+        current_cer = 0
+        prev_cer = current_cer
+
     for loader in loaders:
         dataset = loader.dataset.dataset
         pbar = tqdm(loader, desc='Epoch {} - {} - Fold {}'.format(epoch+1, prefix, loaders.index(loader)+1), unit='it', ncols=0)
@@ -44,6 +49,22 @@ def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracke
             fmt = '{:.4f}'.format
             pbar.set_postfix(loss=fmt(loss_tracker.mean.value), cer=fmt(cer_tracker.mean.value), wer=fmt(wer_tracker.mean.value))
             pbar.update()
+
+            if config.debug and train:
+                current_cer = cer_tracker.mean.value
+                if current_cer > prev_cer:
+                    patients += 1
+                prev_cer = current_cer
+
+                if patients > config.maximum_patients:
+                    torch.save({
+                        "training_folds": loaders,
+                        "vocab": loader.vocab,
+                        "state_dict": model.state_dict(),
+                    "model_opt": loss_compute.criterion,
+                    }, os.path.join(config.checkpoint_path, f"last_model.pth"))
+                    
+                    raise Exception("Overfitted on training folds. Interrupt from this stage")
             
         if not train:
             return {
