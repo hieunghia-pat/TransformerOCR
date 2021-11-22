@@ -62,7 +62,7 @@ def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracke
                     torch.save({
                         "training_folds": loaders,
                         "state_dict": model.state_dict(),
-                    "model_opt": loss_compute.criterion,
+                        "model_opt": loss_compute.criterion,
                     }, os.path.join(config.checkpoint_path, f"last_model.pth"))
                     
                     raise Exception("Overfitted on training folds. Interrupt from this stage")

@@ -8,3 +8,6 @@ __pycache__
 
 TestModule.py
 examine.py
+
+saved_models
+*.pkl

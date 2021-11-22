@@ -38,7 +38,7 @@ class EncoderDecoder(nn.Module):
         encoded_features = self.encode(images, src_mask)
         batch_size = images.shape[0]
         
-        ys = torch.ones(size=(batch_size, 1)).fill_(vocab.stoi[vocab.sos_token]).long().cuda()
+        ys = torch.ones(size=(batch_size, 1)).fill_(vocab.sos_idx).long().cuda()
         for it in range(max_len):
             tgt_mask = subsequent_mask(ys.shape[-1]).long().cuda()
             outs = self.decode(encoded_features, src_mask, ys, tgt_mask)
