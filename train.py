@@ -89,8 +89,8 @@ def train():
     if config.start_from is not None:
         saved_info = torch.load(config.start_from)
         model.load_state_dict(saved_info["state_dict"])
-        from_stage = saved_info["stage"] + 1
-        from_epoch = saved_info["epoch"] + 1
+        from_stage = saved_info["stage"]
+        from_epoch = saved_info["epoch"]
         model.load_state_dict(saved_info["state_dict"])
         model_opt = saved_info["model_opt"]
     else:
@@ -130,8 +130,6 @@ def train():
                 best_scores = val_scores
                 scores_on_test = test_scores
                 torch.save({
-                    "stage": stage,
-                    "epoch": epoch,
                     "folds": folds,
                     "vocab": vocab,
                     "state_dict": model.state_dict(),
@@ -141,8 +139,6 @@ def train():
                 }, os.path.join(config.checkpoint_path, f"best_model_stage_{stage+1}.pth"))
 
             torch.save({
-                "stage": stage,
-                "epoch": epoch,
                 "folds": folds,
                 "vocab": vocab,
                 "state_dict": model.state_dict(),
