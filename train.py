@@ -66,10 +66,10 @@ def run_epoch(loaders, train, prefix, epoch, stage, model, loss_compute, metric,
             }
 
 def train():
-    if not os.path.isfile(f"vocab_{config.out_level}.pkl"):
+    if not os.path.isfile(os.path.join(config.checkpoint_path, f"vocab_{config.out_level}.pkl")):
         vocab = Vocab(config.image_dir, config.out_level)
     else:
-        vocab = pickle.load(open(f"vocab_{config.out_level}.pkl", "rb"))
+        vocab = pickle.load(open(os.path.join(config.checkpoint_path, f"vocab_{config.out_level}.pkl"), "rb"))
 
     train_dataset = OCRDataset(dir=os.path.join(config.image_dir, "train_data"), image_size=config.image_size, out_level=config.out_level, vocab=vocab)
     test_dataset = OCRDataset(dir=os.path.join(config.image_dir, "test_data"), image_size=config.image_size, out_level=config.out_level, vocab=vocab)
@@ -96,8 +96,8 @@ def train():
         from_stage = 0
         from_epoch = 0
 
-    if os.path.isfile(f"folds_{config.out_level}.pkl"):
-        folds = pickle.load(open(f"fold_{config.out_level}.pkl", "rb"))
+    if os.path.isfile(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl")):
+        folds = pickle.load(open(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl"), "rb"))
     else:
         folds = train_dataset.get_folds()
 
