@@ -23,4 +23,5 @@ smoothing = 0.3
 
 ## configure for debug only
 debug = True
-maximum_patients = 5
+save_per_iter = 100
+tmp_checkpoint_path = "tmp_saved_models"

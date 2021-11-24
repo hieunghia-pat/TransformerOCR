@@ -14,7 +14,7 @@ import config
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracker):
+def run_epoch(loaders, train, prefix, epoch, stage, model, loss_compute, metric, tracker):
     if train:
         model.train()
         tracker_class, tracker_params = tracker.MovingMeanMonitor, {'momentum': 0.99}
@@ -23,9 +23,7 @@ def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracke
         tracker_class, tracker_params = tracker.MeanMonitor, {}
 
     if config.debug and train:
-        patients = 0
-        current_cer = 0
-        prev_cer = current_cer
+        total_iter = 0
 
     for loader in loaders:
         dataset = loader.dataset.dataset
@@ -51,22 +49,16 @@ def run_epoch(loaders, train, prefix, epoch, model, loss_compute, metric, tracke
             pbar.update()
 
             if config.debug and train:
-                current_cer = cer_tracker.mean.value
-                if current_cer > prev_cer:
-                    patients += 1
-                elif current_cer <= prev_cer and patients > 0:
-                    patients -= 1
-                prev_cer = current_cer
-
-                if patients > config.maximum_patients:
+                total_iter += 1
+                if total_iter > config.save_per_iter:
+                    total_iter = 0
                     torch.save({
-                        "training_folds": loaders,
+                        "stage": stage,
+                        "epoch": epoch,
                         "state_dict": model.state_dict(),
-                        "model_opt": loss_compute.criterion,
-                    }, os.path.join(config.checkpoint_path, f"last_model.pth"))
-                    
-                    raise Exception("Overfitted on training folds. Interrupt from this stage")
-            
+                        "model_opt": loss_compute.opt
+                    }, os.path.join(config.tmp_checkpoint_path, "last_model.pth"))
+
         if not train:
             return {
                 "cer": cer_tracker.mean.value,
@@ -100,10 +92,13 @@ def train():
         from_epoch = saved_info["epoch"] + 1
         model.load_state_dict(saved_info["state_dict"])
         model_opt = saved_info["model_opt"]
-        folds = saved_info["folds"]
     else:
         from_stage = 0
         from_epoch = 0
+
+    if os.path.isfile(f"folds_{config.out_level}.pkl"):
+        folds = pickle.load(open(f"fold_{config.out_level}.pkl", "rb"))
+    else:
         folds = train_dataset.get_folds()
 
     test_dataloder = DataLoader(test_dataset, 
