@@ -70,6 +70,7 @@ def train():
         vocab = Vocab(config.image_dir, config.out_level)
     else:
         vocab = pickle.load(open(os.path.join(config.checkpoint_path, f"vocab_{config.out_level}.pkl"), "rb"))
+        pickle.dump(vocab, open(os.path.join(config.checkpoint_path, f"vocab_{config.out_level}.pkl"), "wb"))
 
     train_dataset = OCRDataset(dir=os.path.join(config.image_dir, "train_data"), image_size=config.image_size, out_level=config.out_level, vocab=vocab)
     test_dataset = OCRDataset(dir=os.path.join(config.image_dir, "test_data"), image_size=config.image_size, out_level=config.out_level, vocab=vocab)
@@ -100,6 +101,7 @@ def train():
         folds = pickle.load(open(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl"), "rb"))
     else:
         folds = train_dataset.get_folds()
+        pickle.dump(folds, open(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl"), "wb"))
 
     test_dataloder = DataLoader(test_dataset, 
                                 batch_size=config.batch_size, 
