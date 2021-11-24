@@ -111,6 +111,8 @@ def train():
                                 batch_size=config.batch_size, 
                                 shuffle=True, 
                                 collate_fn=collate_fn)
+
+                                
     for stage in range(from_stage, len(folds)):
         best_scores = {
                 "cer": 0,
@@ -159,6 +161,9 @@ def train():
             tmp_fold = folds[idx]
             folds[idx] = folds[idx - 1]
             folds[idx-1] = tmp_fold
+
+        # saving for the new swapped folds
+        pickle.dump(folds, open(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl"), "wb"))
 
 if __name__=='__main__':
 
