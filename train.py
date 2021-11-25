@@ -121,9 +121,9 @@ def train():
         for epoch in range(from_epoch, config.max_epoch):
             run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
                 SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
-            val_scores = run_epoch([folds[-1]], False, "Validation", epoch, from_fold, stage, model, 
+            val_scores = run_epoch([folds[-1]], False, "Validation", epoch, 0, stage, model, 
                 SimpleLossCompute(model.generator, criterion, None), metric, tracker)
-            test_scores = run_epoch([test_dataloder], False, "Evaluation", epoch, from_fold,stage, model, 
+            test_scores = run_epoch([test_dataloder], False, "Evaluation", epoch, 0, stage, model, 
                 SimpleLossCompute(model.generator, criterion, None), metric, tracker)
 
             if best_scores["cer"] < val_scores["cer"]:
