@@ -22,9 +22,6 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
         model.eval()
         tracker_class, tracker_params = tracker.MeanMonitor, {}
 
-    if config.debug and train:
-        total_iter = 0
-
     for fold_idx in range(fold, len(loaders)):
         loader = loaders[fold_idx]
         dataset = loader.dataset.dataset
@@ -49,17 +46,14 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
             pbar.set_postfix(loss=fmt(loss_tracker.mean.value), cer=fmt(cer_tracker.mean.value), wer=fmt(wer_tracker.mean.value))
             pbar.update()
 
-            if config.debug and train:
-                total_iter += 1
-                if total_iter > config.save_per_iter:
-                    total_iter = 0
-                    torch.save({
-                        "stage": stage,
-                        "epoch": epoch,
-                        "fold": loaders.index(loader),
-                        "state_dict": model.state_dict(),
-                        "model_opt": loss_compute.opt
-                    }, os.path.join(config.tmp_checkpoint_path, "last_model.pth"))
+        if config.debug and train:
+            torch.save({
+                "stage": stage,
+                "epoch": epoch,
+                "fold": loaders.index(loader),
+                "state_dict": model.state_dict(),
+                "model_opt": loss_compute.opt
+            }, os.path.join(config.tmp_checkpoint_path, "last_model.pth"))
 
         if not train:
             return {
