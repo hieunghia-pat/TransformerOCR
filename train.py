@@ -36,14 +36,18 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
             loss = loss_compute(logprobs, batch.shifted_right_tokens, batch.ntokens)
             
             outs = model.get_predictions(batch.imgs, batch.src_mask, dataset.vocab, dataset.max_len)
-            scores = metric.get_scores(dataset.vocab.decode_sentence(outs.cpu()), dataset.vocab.decode_sentence(tokens.cpu()))
-
             loss_tracker.append(loss.item())
-            wer_tracker.append(scores["wer"])
-            cer_tracker.append(scores["cer"])
 
             fmt = '{:.4f}'.format
-            pbar.set_postfix(loss=fmt(loss_tracker.mean.value), cer=fmt(cer_tracker.mean.value), wer=fmt(wer_tracker.mean.value))
+
+            if not train:
+                scores = metric.get_scores(dataset.vocab.decode_sentence(outs.cpu()), dataset.vocab.decode_sentence(tokens.cpu()))
+                wer_tracker.append(scores["wer"])
+                cer_tracker.append(scores["cer"])
+                pbar.set_postfix(loss=fmt(loss_tracker.mean.value), cer=fmt(cer_tracker.mean.value), wer=fmt(wer_tracker.mean.value))
+            else:
+                pbar.set_postfix(loss=fmt(loss_tracker.mean.value))
+            
             pbar.update()
 
         if config.debug and train:
