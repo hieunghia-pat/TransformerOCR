@@ -9,6 +9,7 @@ max_epoch = 100
 learning_rate = 5e-5
 checkpoint_path = "saved_models"
 start_from = None
+warmup = 10000
 
 ## model configuration
 dropout = 0.5

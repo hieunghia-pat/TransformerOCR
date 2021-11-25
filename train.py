@@ -85,7 +85,7 @@ def train():
     model.cuda()
     criterion = LabelSmoothing(size=len(vocab.stoi), padding_idx=vocab.padding_idx, smoothing=config.smoothing)
     criterion.cuda()
-    model_opt = NoamOpt(model.tgt_embed[0].d_model, 1, 2000,
+    model_opt = NoamOpt(model.tgt_embed[0].d_model, 1, config.warmup,
             torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9))
 
     if config.start_from is not None:
