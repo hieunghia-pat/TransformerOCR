@@ -33,21 +33,19 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
         
         for imgs, tokens, shifted_tokens in pbar:
             batch = Batch(imgs, tokens, shifted_tokens, dataset.vocab.padding_idx)
-            logprobs = model(batch.imgs, batch.tokens, batch.src_mask, batch.tokens_mask)
-            loss = loss_compute(logprobs, batch.shifted_right_tokens, batch.ntokens)
-            
-            outs = model.get_predictions(batch.imgs, batch.src_mask, dataset.vocab, dataset.max_len)
-            loss_tracker.append(loss.item())
 
             fmt = '{:.4f}'.format
-
             if not train:
+                logprobs = model(batch.imgs, batch.tokens, batch.src_mask, batch.tokens_mask)
+                loss = loss_compute(logprobs, batch.shifted_right_tokens, batch.ntokens)
+                loss_tracker.append(loss.item())
+                pbar.set_postfix(loss=fmt(loss_tracker.mean.value))
+            else:
+                outs = model.get_predictions(batch.imgs, batch.src_mask, dataset.vocab, dataset.max_len)
                 scores = metric.get_scores(dataset.vocab.decode_sentence(outs.cpu()), dataset.vocab.decode_sentence(tokens.cpu()))
                 wer_tracker.append(scores["wer"])
                 cer_tracker.append(scores["cer"])
-                pbar.set_postfix(loss=fmt(loss_tracker.mean.value), cer=fmt(cer_tracker.mean.value), wer=fmt(wer_tracker.mean.value))
-            else:
-                pbar.set_postfix(loss=fmt(loss_tracker.mean.value))
+                pbar.set_postfix(cer=fmt(cer_tracker.mean.value), wer=fmt(wer_tracker.mean.value))
             
             pbar.update()
 
