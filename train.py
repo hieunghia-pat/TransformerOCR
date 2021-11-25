@@ -25,7 +25,10 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
 
     for fold_idx in range(fold, len(loaders)):
         loader = loaders[fold_idx]
-        dataset = loader.dataset.dataset
+        try:
+            dataset = loader.dataset.dataset
+        except:
+            dataset = loader.dataset
         pbar = tqdm(loader, desc='Epoch {} - {} - Fold {}'.format(epoch+1, prefix, loaders.index(loader)+1), unit='it', ncols=0)
         loss_tracker = tracker.track('{}_loss'.format(prefix), tracker_class(**tracker_params))
         cer_tracker = tracker.track('{}_cer'.format(prefix), tracker_class(**tracker_params))
@@ -117,28 +120,19 @@ def train():
                 "wer": 0
         }
 
-        scores_on_test = {
-            "cer": 0,
-            "wer": 0
-        }
-
         for epoch in range(from_epoch, config.max_epoch):
             run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
                 SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
             val_scores = run_epoch([folds[-1]], False, "Validation", epoch, 0, stage, model, 
                 SimpleLossCompute(model.generator, criterion, None), metric, tracker)
-            test_scores = run_epoch([test_dataloder], False, "Evaluation", epoch, 0, stage, model, 
-                SimpleLossCompute(model.generator, criterion, None), metric, tracker)
 
             if best_scores["cer"] < val_scores["cer"]:
                 best_scores = val_scores
-                scores_on_test = test_scores
                 torch.save({
                     "vocab": vocab,
                     "state_dict": model.state_dict(),
                     "model_opt": model_opt,
                     "val_scores": val_scores,
-                    "test_scores": test_scores,
                 }, os.path.join(config.checkpoint_path, f"best_model_stage_{stage+1}.pth"))
 
             torch.save({
@@ -146,12 +140,13 @@ def train():
                 "state_dict": model.state_dict(),
                 "model_opt": model_opt,
                 "val_scores": val_scores,
-                "test_scores": test_scores,
             }, os.path.join(config.checkpoint_path, f"last_model_stage_{stage+1}.pth"))
 
             print("*"*13)
 
-        print(f"Stage {stage+1} completed. Scores on test set: CER = {scores_on_test['cer']} - WER = {scores_on_test['wer']}.")
+        test_scores = run_epoch([test_dataloder], False, "Evaluation", epoch, 0, stage, model, 
+                SimpleLossCompute(model.generator, criterion, None), metric, tracker)
+        print(f"Stage {stage+1} completed. Scores on test set: CER = {test_scores['cer']} - WER = {test_scores['wer']}.")
         print("="*23)
 
         # swapping folds
