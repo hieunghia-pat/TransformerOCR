@@ -50,7 +50,7 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
             torch.save({
                 "stage": stage,
                 "epoch": epoch,
-                "fold": loaders.index(loader),
+                "fold": loaders.index(loader)+1,
                 "state_dict": model.state_dict(),
                 "model_opt": loss_compute.opt
             }, os.path.join(config.tmp_checkpoint_path, "last_model.pth"))
