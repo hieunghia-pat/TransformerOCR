@@ -143,6 +143,7 @@ def train():
             }, os.path.join(config.checkpoint_path, f"last_model_stage_{stage+1}.pth"))
 
             print("*"*13)
+            from_fold = 0 # start a new epoch
 
         test_scores = run_epoch([test_dataloder], False, "Evaluation", epoch, 0, stage, model, 
                 SimpleLossCompute(model.generator, criterion, None), metric, tracker)
