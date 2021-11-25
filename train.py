@@ -35,7 +35,7 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
             batch = Batch(imgs, tokens, shifted_tokens, dataset.vocab.padding_idx)
 
             fmt = '{:.4f}'.format
-            if not train:
+            if train:
                 logprobs = model(batch.imgs, batch.tokens, batch.src_mask, batch.tokens_mask)
                 loss = loss_compute(logprobs, batch.shifted_right_tokens, batch.ntokens)
                 loss_tracker.append(loss.item())
