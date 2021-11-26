@@ -1,6 +1,5 @@
 import pickle
 import torch
-from torch.nn import DataParallel
 from torch.utils.data.dataloader import DataLoader
 from metric_utils.metrics import Metrics
 from metric_utils.tracker import Tracker
@@ -87,8 +86,7 @@ def train():
     tracker = Tracker()
     
     model = make_model(len(vocab.stoi), N=config.num_layers, d_model=config.d_model, d_ff=config.dff, 
-                            h=config.heads, dropout=config.dropout)
-    # model = DataParallel(model)
+                            h=config.heads, dropout=config.dropout) 
 
     model.cuda()
     criterion = LabelSmoothing(size=len(vocab.stoi), padding_idx=vocab.padding_idx, smoothing=config.smoothing)

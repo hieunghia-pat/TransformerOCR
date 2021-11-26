@@ -1,12 +1,12 @@
 ## dataset configuartion
-batch_size = 64
+batch_size = 4
 out_level = "character"
 image_dir = ""
-image_size = (-1, 128)
+image_size = (-1, 64)
 
 ## training configuration
 max_epoch = 100
-learning_rate = 5e-5
+learning_rate = 0
 checkpoint_path = "saved_models"
 start_from = None
 warmup = 10000
@@ -20,7 +20,7 @@ heads = 8
 beam_size = 2
 
 ## objective function configuration
-smoothing = 0.3
+smoothing = 0.1
 
 ## configure for debug only
 debug = True
