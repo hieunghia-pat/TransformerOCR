@@ -126,7 +126,7 @@ def train():
             loss = run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
                 SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
 
-            if loss < 1.:
+            if loss <= 1.:
                 val_scores = run_epoch([folds[-1]], False, "Validation", epoch, 0, stage, model, 
                     SimpleLossCompute(model.generator, criterion, None), metric, tracker)
 
