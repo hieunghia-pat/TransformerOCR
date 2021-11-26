@@ -61,7 +61,7 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
                 "fold": loaders.index(loader)+1,
                 "state_dict": model.state_dict(),
                 "model_opt": loss_compute.opt,
-                "loss": loss_tracker.mean.value
+                "loss": fold_loss_tracker.mean.value
             }, os.path.join(config.tmp_checkpoint_path, "last_model.pth"))
 
         if not train:
