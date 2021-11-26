@@ -100,7 +100,7 @@ def train():
             torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9))
 
     if config.start_from is not None:
-        saved_info = torch.load(config.start_from)
+        saved_info = torch.load(config.start_from, map_location=device)
         model.load_state_dict(saved_info["state_dict"])
         from_stage = saved_info["stage"]
         from_epoch = saved_info["epoch"]
