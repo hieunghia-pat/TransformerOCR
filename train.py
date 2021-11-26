@@ -33,6 +33,8 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
         loss_tracker = tracker.track('{}_loss'.format(prefix), tracker_class(**tracker_params))
         cer_tracker = tracker.track('{}_cer'.format(prefix), tracker_class(**tracker_params))
         wer_tracker = tracker.track('{}_wer'.format(prefix), tracker_class(**tracker_params))
+
+        loss = float("inf")
         
         for imgs, tokens, shifted_tokens in pbar:
             batch = Batch(imgs, tokens, shifted_tokens, dataset.vocab.padding_idx)
@@ -66,6 +68,8 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
                 "cer": cer_tracker.mean.value,
                 "wer": wer_tracker.mean.value
             }
+        else:
+            return loss
 
 def train():
     if not os.path.isfile(os.path.join(config.checkpoint_path, f"vocab_{config.out_level}.pkl")):
@@ -121,32 +125,35 @@ def train():
         }
 
         for epoch in range(from_epoch, config.max_epoch):
-            run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
+            loss = run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
                 SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
-            val_scores = run_epoch([folds[-1]], False, "Validation", epoch, 0, stage, model, 
-                SimpleLossCompute(model.generator, criterion, None), metric, tracker)
 
-            if best_scores["cer"] < val_scores["cer"]:
-                best_scores = val_scores
+            if loss < 1.:
+                val_scores = run_epoch([folds[-1]], False, "Validation", epoch, 0, stage, model, 
+                    SimpleLossCompute(model.generator, criterion, None), metric, tracker)
+
+                if best_scores["cer"] < val_scores["cer"]:
+                    best_scores = val_scores
+                    torch.save({
+                        "vocab": vocab,
+                        "state_dict": model.state_dict(),
+                        "model_opt": model_opt,
+                        "val_scores": val_scores,
+                    }, os.path.join(config.checkpoint_path, f"best_model_stage_{stage+1}.pth"))
+
                 torch.save({
                     "vocab": vocab,
                     "state_dict": model.state_dict(),
                     "model_opt": model_opt,
                     "val_scores": val_scores,
-                }, os.path.join(config.checkpoint_path, f"best_model_stage_{stage+1}.pth"))
-
-            torch.save({
-                "vocab": vocab,
-                "state_dict": model.state_dict(),
-                "model_opt": model_opt,
-                "val_scores": val_scores,
-            }, os.path.join(config.checkpoint_path, f"last_model_stage_{stage+1}.pth"))
+                }, os.path.join(config.checkpoint_path, f"last_model_stage_{stage+1}.pth"))
 
             print("*"*13)
             from_fold = 0 # start a new epoch
 
         test_scores = run_epoch([test_dataloder], False, "Evaluation", epoch, 0, stage, model, 
                 SimpleLossCompute(model.generator, criterion, None), metric, tracker)
+                
         print(f"Stage {stage+1} completed. Scores on test set: CER = {test_scores['cer']} - WER = {test_scores['wer']}.")
         print("="*23)
 
