@@ -98,12 +98,14 @@ def train():
         from_stage = saved_info["stage"]
         from_epoch = saved_info["epoch"]
         from_fold = saved_info["fold"]
+        loss = saved_info["loss"]
         model.load_state_dict(saved_info["state_dict"])
         model_opt = saved_info["model_opt"]
     else:
         from_stage = 0
         from_epoch = 0
         from_fold = 0
+        loss = None
 
     if os.path.isfile(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl")):
         folds = pickle.load(open(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl"), "rb"))
@@ -125,9 +127,10 @@ def train():
         
         loss = float("inf")
         for epoch in range(from_epoch, config.max_epoch):
-            loss = run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
+            tmp_loss = run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
                 SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
-
+            loss = tmp_loss if tmp_loss is not None else loss
+            
             if loss <= 1.:
                 val_scores = run_epoch([folds[-1]], False, "Validation", epoch, 0, stage, model, 
                     SimpleLossCompute(model.generator, criterion, None), metric, tracker)
