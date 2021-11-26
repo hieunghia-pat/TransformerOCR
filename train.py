@@ -68,7 +68,7 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
                 "wer": wer_tracker.mean.value
             }
         else:
-            return loss_tracker.value.mean
+            return loss_tracker.mean.value
 
 def train():
     if not os.path.isfile(os.path.join(config.checkpoint_path, f"vocab_{config.out_level}.pkl")):
@@ -130,7 +130,7 @@ def train():
             tmp_loss = run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
                 SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
             loss = tmp_loss if tmp_loss is not None else loss
-            
+
             if loss <= 1.:
                 val_scores = run_epoch([folds[-1]], False, "Validation", epoch, 0, stage, model, 
                     SimpleLossCompute(model.generator, criterion, None), metric, tracker)
