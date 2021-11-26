@@ -33,8 +33,6 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
         loss_tracker = tracker.track('{}_loss'.format(prefix), tracker_class(**tracker_params))
         cer_tracker = tracker.track('{}_cer'.format(prefix), tracker_class(**tracker_params))
         wer_tracker = tracker.track('{}_wer'.format(prefix), tracker_class(**tracker_params))
-
-        loss = float("inf")
         
         for imgs, tokens, shifted_tokens in pbar:
             batch = Batch(imgs, tokens, shifted_tokens, dataset.vocab.padding_idx)
@@ -69,7 +67,7 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
                 "wer": wer_tracker.mean.value
             }
         else:
-            return loss
+            return loss_tracker.value.mean
 
 def train():
     if not os.path.isfile(os.path.join(config.checkpoint_path, f"vocab_{config.out_level}.pkl")):
@@ -153,7 +151,7 @@ def train():
 
         test_scores = run_epoch([test_dataloder], False, "Evaluation", epoch, 0, stage, model, 
                 SimpleLossCompute(model.generator, criterion, None), metric, tracker)
-                
+
         print(f"Stage {stage+1} completed. Scores on test set: CER = {test_scores['cer']} - WER = {test_scores['wer']}.")
         print("="*23)
 
