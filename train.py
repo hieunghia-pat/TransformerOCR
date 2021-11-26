@@ -14,6 +14,11 @@ import config
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
+if torch.cuda.is_available():
+    device = "cuda"
+else: 
+    device = "cpu"
+
 def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, metric, tracker):
     if train:
         model.train()
@@ -36,7 +41,7 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
         wer_tracker = tracker.track('{}_wer'.format(prefix), tracker_class(**tracker_params))
         
         for imgs, tokens, shifted_tokens in pbar:
-            batch = Batch(imgs, tokens, shifted_tokens, dataset.vocab.padding_idx)
+            batch = Batch(imgs, tokens, shifted_tokens, dataset.vocab.padding_idx, device=device)
 
             fmt = '{:.4f}'.format
             if train:
@@ -46,7 +51,7 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
                 pbar.set_postfix(loss=fmt(loss_tracker.mean.value))
             else:
                 outs = model.get_predictions(batch.imgs, batch.src_mask, dataset.vocab, dataset.max_len)
-                scores = metric.get_scores(dataset.vocab.decode_sentence(outs.cpu()), dataset.vocab.decode_sentence(tokens.cpu()))
+                scores = metric.get_scores(dataset.vocab.decode_sentence(outs.to("cpu")), dataset.vocab.decode_sentence(tokens.to("cpu")))
                 wer_tracker.append(scores["wer"])
                 cer_tracker.append(scores["cer"])
                 pbar.set_postfix(cer=fmt(cer_tracker.mean.value), wer=fmt(wer_tracker.mean.value))
@@ -88,10 +93,10 @@ def train():
     model = make_model(len(vocab.stoi), N=config.num_layers, d_model=config.d_model, d_ff=config.dff, 
                             h=config.heads, dropout=config.dropout) 
 
-    model.cuda()
+    model.to(device)
     criterion = LabelSmoothing(size=len(vocab.stoi), padding_idx=vocab.padding_idx, smoothing=config.smoothing)
-    criterion.cuda()
-    model_opt = NoamOpt(model.tgt_embed[0].d_model, 1, config.warmup,
+    criterion.to(device)
+    model_opt = NoamOpt(config.d_model, 1, config.warmup,
             torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9))
 
     if config.start_from is not None:

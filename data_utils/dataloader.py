@@ -91,10 +91,10 @@ class OCRDataset(Dataset):
 
 class Batch:
     "Object for holding a batch of data with mask during training."
-    def __init__(self, imgs, tokens, shifted_right_tokens, pad=0):
-        self.imgs = imgs.cuda()
+    def __init__(self, imgs, tokens, shifted_right_tokens, pad=0, device="cuda"):
+        self.imgs = imgs.to(device)
         self.src_mask = None
-        self.tokens = tokens.cuda()
-        self.shifted_right_tokens = shifted_right_tokens.cuda()
+        self.tokens = tokens.to(device)
+        self.shifted_right_tokens = shifted_right_tokens.to(device)
         self.tokens_mask = make_std_mask(self.tokens, pad)
         self.ntokens = (self.shifted_right_tokens != pad).sum()
