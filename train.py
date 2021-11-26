@@ -23,6 +23,8 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
         model.eval()
         tracker_class, tracker_params = tracker.MeanMonitor, {}
 
+    fold_loss_tracker = tracker.track('fold_loss', tracker_class(**tracker_params))
+
     for fold_idx in range(fold, len(loaders)):
         loader = loaders[fold_idx]
         try:
@@ -68,7 +70,9 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
                 "wer": wer_tracker.mean.value
             }
         else:
-            return loss_tracker.mean.value
+            fold_loss_tracker.append(loss_tracker.mean.value)
+    
+    return fold_loss_tracker.mean.value
 
 def train():
     if not os.path.isfile(os.path.join(config.checkpoint_path, f"vocab_{config.out_level}.pkl")):
