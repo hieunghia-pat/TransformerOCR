@@ -58,7 +58,8 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
                 "epoch": epoch,
                 "fold": loaders.index(loader)+1,
                 "state_dict": model.state_dict(),
-                "model_opt": loss_compute.opt
+                "model_opt": loss_compute.opt,
+                "loss": loss_tracker.mean.value
             }, os.path.join(config.tmp_checkpoint_path, "last_model.pth"))
 
         if not train:
@@ -121,7 +122,8 @@ def train():
                 "cer": 0,
                 "wer": 0
         }
-
+        
+        loss = float("inf")
         for epoch in range(from_epoch, config.max_epoch):
             loss = run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
                 SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
