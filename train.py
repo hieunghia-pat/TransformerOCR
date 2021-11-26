@@ -131,6 +131,10 @@ def train():
         for epoch in range(from_epoch, config.max_epoch):
             tmp_loss = run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
                 SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
+
+            if tmp_loss is not None:
+                print(f"Training loss: {tmp_loss}")
+            
             loss = tmp_loss if tmp_loss is not None else loss
 
             if loss <= 1.:
