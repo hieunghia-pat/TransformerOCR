@@ -27,7 +27,9 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
         model.eval()
         tracker_class, tracker_params = tracker.MeanMonitor, {}
 
-    fold_loss_tracker = tracker.track('fold_loss', tracker_class(**tracker_params))
+    loss_tracker = tracker.track('{}_loss'.format(prefix), tracker_class(**tracker_params))
+    cer_tracker = tracker.track('{}_cer'.format(prefix), tracker_class(**tracker_params))
+    wer_tracker = tracker.track('{}_wer'.format(prefix), tracker_class(**tracker_params))
 
     for fold_idx in range(fold, len(loaders)):
         loader = loaders[fold_idx]
@@ -36,9 +38,6 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
         except:
             dataset = loader.dataset
         pbar = tqdm(loader, desc='Epoch {} - {} - Fold {}'.format(epoch+1, prefix, loaders.index(loader)+1), unit='it', ncols=0)
-        loss_tracker = tracker.track('{}_loss'.format(prefix), tracker_class(**tracker_params))
-        cer_tracker = tracker.track('{}_cer'.format(prefix), tracker_class(**tracker_params))
-        wer_tracker = tracker.track('{}_wer'.format(prefix), tracker_class(**tracker_params))
         
         for imgs, tokens, shifted_tokens in pbar:
             batch = Batch(imgs, tokens, shifted_tokens, dataset.vocab.padding_idx, device=device)
@@ -48,13 +47,13 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
                 logprobs = model(batch.imgs, batch.tokens, batch.src_mask, batch.tokens_mask)
                 loss = loss_compute(logprobs, batch.shifted_right_tokens, batch.ntokens)
                 loss_tracker.append(loss.item())
-                pbar.set_postfix(loss=fmt(loss_tracker.mean.value))
+                pbar.set_postfix(loss=fmt(loss.item()))
             else:
                 outs = model.get_predictions(batch.imgs, batch.src_mask, dataset.vocab, dataset.max_len)
                 scores = metric.get_scores(dataset.vocab.decode_sentence(outs.to("cpu")), dataset.vocab.decode_sentence(tokens.to("cpu")))
                 wer_tracker.append(scores["wer"])
                 cer_tracker.append(scores["cer"])
-                pbar.set_postfix(cer=fmt(cer_tracker.mean.value), wer=fmt(wer_tracker.mean.value))
+                pbar.set_postfix(cer=fmt(scores["cer"]), wer=fmt(scores["wer"]))
             
             pbar.update()
 
@@ -65,7 +64,7 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
                 "fold": loaders.index(loader)+1,
                 "state_dict": model.state_dict(),
                 "model_opt": loss_compute.opt,
-                "loss": fold_loss_tracker.mean.value
+                "loss": loss_tracker.mean.value
             }, os.path.join(config.tmp_checkpoint_path, "last_model.pth"))
 
         if not train:
@@ -73,10 +72,8 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
                 "cer": cer_tracker.mean.value,
                 "wer": wer_tracker.mean.value
             }
-        else:
-            fold_loss_tracker.append(loss_tracker.mean.value)
     
-    return fold_loss_tracker.mean.value
+    return loss_tracker.mean.value
 
 def train():
     if not os.path.isfile(os.path.join(config.checkpoint_path, f"vocab_{config.out_level}.pkl")):
