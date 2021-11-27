@@ -106,7 +106,7 @@ def train():
         from_fold = saved_info["fold"]
         loss = saved_info["loss"]
         model.load_state_dict(saved_info["state_dict"])
-        model_opt = saved_info["model_opt"]
+        # model_opt = saved_info["model_opt"]
     else:
         from_stage = 0
         from_epoch = 0
