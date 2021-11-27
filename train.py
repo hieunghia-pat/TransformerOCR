@@ -93,8 +93,10 @@ def train():
     model.to(device)
     criterion = LabelSmoothing(size=len(vocab.stoi), padding_idx=vocab.padding_idx, smoothing=config.smoothing)
     criterion.to(device)
-    model_opt = NoamOpt(config.d_model, 1, config.warmup,
-            torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9))
+    # model_opt = NoamOpt(config.d_model, 1, config.warmup,
+    #         torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9))
+
+    model_opt = torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9)
 
     if config.start_from is not None:
         saved_info = torch.load(config.start_from, map_location=device)

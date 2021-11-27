@@ -1,15 +1,15 @@
 ## dataset configuartion
-batch_size = 4
+batch_size = 8
 out_level = "character"
-image_dir = ""
-image_size = (-1, 64)
+image_dir = "../UIT_HWDB_line_syn"
+image_size = (1024, 64)
 
 ## training configuration
-max_epoch = 100
-learning_rate = 0
-checkpoint_path = "saved_models"
+max_epoch = 500
+learning_rate = 1e-4
+checkpoint_path = "/content/gdrive/MyDrive/TransformerOCR/saved_models"
 start_from = None
-warmup = 10000
+warmup = 2000
 
 ## model configuration
 dropout = 0.5
@@ -20,9 +20,9 @@ heads = 8
 beam_size = 2
 
 ## objective function configuration
-smoothing = 0.1
+smoothing = 0.2
 
 ## configure for debug only
 debug = True
 save_per_iter = 100
-tmp_checkpoint_path = "tmp_saved_models"
+tmp_checkpoint_path = "/content/gdrive/MyDrive/TransformerOCR/tmp_saved_models"
