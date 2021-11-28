@@ -27,9 +27,15 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
         model.eval()
         tracker_class, tracker_params = tracker.MeanMonitor, {}
 
-    loss_tracker = tracker.track('{}_loss'.format(prefix), tracker_class(**tracker_params))
-    cer_tracker = tracker.track('{}_cer'.format(prefix), tracker_class(**tracker_params))
-    wer_tracker = tracker.track('{}_wer'.format(prefix), tracker_class(**tracker_params))
+    if config.start_from and fold > 0:
+        saved_info = torch.load(config.start_from, map_location=device)
+        loss_tracker = saved_info["loss_tracker"]
+    else:
+        loss_tracker = tracker.track('{}_loss'.format(prefix), tracker_class(**tracker_params))
+
+    if not train:
+        cer_tracker = tracker.track('{}_cer'.format(prefix), tracker_class(**tracker_params))
+        wer_tracker = tracker.track('{}_wer'.format(prefix), tracker_class(**tracker_params))
 
     for fold_idx in range(fold, len(loaders)):
         loader = loaders[fold_idx]
@@ -37,7 +43,7 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
             dataset = loader.dataset.dataset
         except:
             dataset = loader.dataset
-        pbar = tqdm(loader, desc='Epoch {} - {} - Fold {}'.format(epoch+1, prefix, loaders.index(loader)+1), unit='it', ncols=0)
+        pbar = tqdm(loader, desc='Epoch {} - {} - Fold {}'.format(epoch+1, prefix, fold_idx+1), unit='it', ncols=0)
         
         for imgs, tokens, shifted_tokens in pbar:
             batch = Batch(imgs, tokens, shifted_tokens, dataset.vocab.padding_idx, device=device)
@@ -57,21 +63,20 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
             
             pbar.update()
 
-        if config.debug and train:
+        if train:
             torch.save({
                 "stage": stage,
                 "epoch": epoch,
-                "fold": loaders.index(loader)+1,
+                "fold": fold_idx,
                 "state_dict": model.state_dict(),
-                "model_opt": loss_compute.opt,
-                "loss": loss_tracker.mean.value
+                "loss_tracker": loss_tracker,
             }, os.path.join(config.tmp_checkpoint_path, "last_model.pth"))
 
-        if not train:
-            return {
-                "cer": cer_tracker.mean.value,
-                "wer": wer_tracker.mean.value
-            }
+    if not train:
+        return {
+            "cer": cer_tracker.mean.value,
+            "wer": wer_tracker.mean.value
+        }
     
     return loss_tracker.mean.value
 
@@ -98,20 +103,17 @@ def train():
 
     model_opt = torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9)
 
-    if config.start_from is not None:
+    if config.start_from:
         saved_info = torch.load(config.start_from, map_location=device)
         model.load_state_dict(saved_info["state_dict"])
         from_stage = saved_info["stage"]
         from_epoch = saved_info["epoch"]
-        from_fold = saved_info["fold"]
-        loss = saved_info["loss"]
+        from_fold = saved_info["fold"] + 1
         model.load_state_dict(saved_info["state_dict"])
-        # model_opt = saved_info["model_opt"]
     else:
         from_stage = 0
         from_epoch = 0
         from_fold = 0
-        loss = None
 
     if os.path.isfile(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl")):
         folds = pickle.load(open(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl"), "rb"))
@@ -131,15 +133,14 @@ def train():
                 "wer": 0
         }
         
-        loss = float("inf")
         for epoch in range(from_epoch, config.max_epoch):
-            tmp_loss = run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
+            loss = run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
                 SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
 
-            if tmp_loss is not None:
-                print(f"Training loss: {tmp_loss}")
-            
-            loss = tmp_loss if tmp_loss is not None else loss
+            if loss:
+                print(f"Training loss: {loss}")
+            else:
+                loss = saved_info["loss_tracker"].mean.value
 
             if loss <= 1.:
                 val_scores = run_epoch([folds[-1]], False, "Validation", epoch, 0, stage, model, 
