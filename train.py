@@ -139,6 +139,7 @@ def train():
 
             if loss:
                 print(f"Training loss: {loss}")
+                print("-"*7)
             else:
                 loss = saved_info["loss_tracker"].mean.value
 
@@ -162,6 +163,7 @@ def train():
                     "val_scores": val_scores,
                 }, os.path.join(config.checkpoint_path, f"last_model_stage_{stage+1}.pth"))
 
+            print(f"CER: {val_scores['cer']} - WER: {val_scores['wer']}")
             print("*"*13)
             from_fold = 0 # start a new epoch
 
