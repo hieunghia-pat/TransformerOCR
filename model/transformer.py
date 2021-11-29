@@ -39,19 +39,16 @@ class EncoderDecoder(nn.Module):
         batch_size = images.shape[0]
         
         ys = torch.ones(size=(batch_size, 1)).fill_(vocab.sos_idx).long().cuda()
+        eos_tokens = torch.zeros(size=(batch_size, 1)).cuda()
         for it in range(max_len):
             tgt_mask = subsequent_mask(ys.shape[-1]).long().cuda()
             outs = self.decode(encoded_features, src_mask, ys, tgt_mask)
             outs = self.generator(outs[:, -1])
             outs = outs.argmax(dim=-1, keepdim=True)
+            eos_tokens = torch.where(eos_tokens == 0 and outs == vocab.eos_idx, 1, eos_tokens)
             ys = torch.cat([ys, outs], dim=1)
-
-        # refine the outputs
-        for batch_idx in range(ys.size(0)):
-            idx = 0
-            while ys[batch_idx, idx] != vocab.eos_idx and idx < ys.size(1)-1:
-                idx += 1
-            ys[batch_idx, idx+1:] = vocab.padding_idx
+            if eos_tokens.sum() == batch_size:
+                break
         
         return ys
 
