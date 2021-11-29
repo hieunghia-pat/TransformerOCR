@@ -51,7 +51,7 @@ class EncoderDecoder(nn.Module):
             if eos_tokens.sum().item() == 0:
                 break
         
-        return ys
+        return ys[:, 1:]
 
 def make_model(vocab_size, N=4, 
                d_model=256, d_ff=1024, d_feature=1024, h=8, dropout=0.1):
