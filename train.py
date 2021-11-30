@@ -139,7 +139,6 @@ def train():
 
             if loss:
                 print(f"Training loss: {loss}")
-                print("-"*7)
             else:
                 loss = saved_info["loss_tracker"].mean.value
 
