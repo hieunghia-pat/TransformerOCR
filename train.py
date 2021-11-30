@@ -128,11 +128,16 @@ def train():
 
                                 
     for stage in range(from_stage, len(folds)):
-        best_scores = {
-                "cer": 0,
-                "wer": 0
-        }
-        
+
+        if os.path.isfile(os.path.join(config.checkpoint_path, f"best_model_stage_{from_stage+1}.pth")):
+            best_info = torch.load(os.path.join(config.checkpoint_path, f"best_model_stage_{from_stage+1}.pth"), map_location=device)
+            best_scores = best_info["val_scores"]
+        else:
+            best_scores = {
+                "cer": float("inf"),
+                "wer": float("inf")
+            }
+
         for epoch in range(from_epoch, config.max_epoch):
             loss = run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
                 SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
@@ -146,7 +151,7 @@ def train():
                 val_scores = run_epoch([folds[-1]], False, "Validation", epoch, 0, stage, model, 
                     SimpleLossCompute(model.generator, criterion, None), metric, tracker)
 
-                if best_scores["cer"] < val_scores["cer"]:
+                if best_scores["cer"] > val_scores["cer"]:
                     best_scores = val_scores
                     torch.save({
                         "vocab": vocab,
