@@ -106,9 +106,9 @@ def train():
     if config.start_from:
         saved_info = torch.load(config.start_from, map_location=device)
         model.load_state_dict(saved_info["state_dict"])
-        from_stage = saved_info["stage"]
-        from_epoch = saved_info["epoch"]
-        from_fold = saved_info["fold"] + 1
+        from_stage = saved_info["stage"] if "stage" in saved_info else 0
+        from_epoch = saved_info["epoch"] if "stage" in saved_info else 0
+        from_fold = saved_info["fold"] + 1 if "stage" in saved_info else 0
         model.load_state_dict(saved_info["state_dict"])
     else:
         from_stage = 0
