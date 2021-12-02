@@ -118,7 +118,7 @@ def train():
     if os.path.isfile(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl")):
         folds = pickle.load(open(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl"), "rb"))
     else:
-        folds = train_dataset.get_folds()
+        folds = train_dataset.get_folds(k=10)
         pickle.dump(folds, open(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl"), "wb"))
 
     test_dataloder = DataLoader(test_dataset, 
