@@ -76,7 +76,7 @@ class OCRDataset(Dataset):
                     self.max_len = len(label) + 2
 
     def get_folds(self, k=5) -> List[DataLoader]:
-        fold_size = len(self) // 5
+        fold_size = len(self) // k
         splits = [fold_size]*(k-1) + [len(self) - fold_size*(k-1)]
         subdatasets = random_split(self, splits, torch.Generator().manual_seed(13))
 
