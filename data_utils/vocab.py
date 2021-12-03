@@ -87,7 +87,7 @@ class Vocab(object):
             for folder in os.listdir(parent_folder):
                 labels = json.load(open(os.path.join(parent_folder, folder, "label.json")))
                 for label in labels.values():
-                    label = label.strip()
+                    label = " ".join(label.split())
                     if self.out_level == "character":
                         vocab_set.update(list(label))
                         counter.update(list(label))
