@@ -6,7 +6,7 @@ from metric_utils.tracker import Tracker
 from data_utils.vocab import Vocab
 from model.transformer import make_model
 import os
-from loss_utils.LabelSmoothingLoss import LabelSmoothing, SimpleLossCompute, NoamOpt
+from loss_utils.LabelSmoothingLoss import LabelSmoothing, SimpleLossCompute
 from data_utils.dataloader import Batch, OCRDataset, collate_fn
 from tqdm import tqdm
 
@@ -19,7 +19,7 @@ if torch.cuda.is_available():
 else: 
     device = "cpu"
 
-def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, metric, tracker):
+def run_epoch(loaders, train, prefix, epoch, fold, model, loss_compute, metric, tracker):
     if train:
         model.train()
         tracker_class, tracker_params = tracker.MovingMeanMonitor, {'momentum': 0.99}
@@ -65,7 +65,6 @@ def run_epoch(loaders, train, prefix, epoch, fold, stage, model, loss_compute, m
 
         if train:
             torch.save({
-                "stage": stage,
                 "epoch": epoch,
                 "fold": fold_idx,
                 "state_dict": model.state_dict(),
@@ -98,20 +97,16 @@ def train():
     model.to(device)
     criterion = LabelSmoothing(size=len(vocab.stoi), padding_idx=vocab.padding_idx, smoothing=config.smoothing)
     criterion.to(device)
-    # model_opt = NoamOpt(config.d_model, 1, config.warmup,
-    #         torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9))
 
     model_opt = torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9)
 
     if config.start_from:
         saved_info = torch.load(config.start_from, map_location=device)
         model.load_state_dict(saved_info["state_dict"])
-        from_stage = saved_info["stage"] if "stage" in saved_info else 0
-        from_epoch = saved_info["epoch"] if "stage" in saved_info else 0
-        from_fold = saved_info["fold"] + 1 if "stage" in saved_info else 0
+        from_epoch = saved_info["epoch"]
+        from_fold = saved_info["fold"] + 1
         model.load_state_dict(saved_info["state_dict"])
     else:
-        from_stage = 0
         from_epoch = 0
         from_fold = 0
 
@@ -126,75 +121,49 @@ def train():
                                 shuffle=True, 
                                 collate_fn=collate_fn)
 
-                                
-    for stage in range(from_stage, len(folds)):
-
-        if os.path.isfile(os.path.join(config.checkpoint_path, f"best_model_stage_{from_stage+1}.pth")):
-            best_info = torch.load(os.path.join(config.checkpoint_path, f"best_model_stage_{from_stage+1}.pth"), map_location=device)
-            best_scores = best_info["val_scores"]
-        else:
-            best_scores = {
-                "cer": float("inf"),
-                "wer": float("inf")
-            }
-
-        best_test_scores = {
-            "cer": 0,
-            "wer": 0
+    if os.path.isfile(os.path.join(config.checkpoint_path, "best_model.pth")):
+        best_info = torch.load(os.path.join(config.checkpoint_path, "best_model.pth"), map_location=device)
+        best_scores = best_info["scores"]
+    else:
+        best_scores = {
+            "cer": float("inf"),
+            "wer": float("inf")
         }
-        for epoch in range(from_epoch, config.max_epoch):
-            loss = run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
-                SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
 
-            if loss:
-                print(f"Training loss: {loss}")
-            else:
-                loss = saved_info["loss_tracker"].mean.value
+    for epoch in range(from_epoch, config.max_epoch):
+        loss = run_epoch(folds, True, "Training", epoch, from_fold, model, 
+            SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
 
-            if loss <= 1.:
-                val_scores = run_epoch([folds[-1]], False, "Validation", epoch, 0, stage, model, 
+        if loss:
+            print(f"Training loss: {loss}")
+        else:
+            loss = saved_info["loss_tracker"].mean.value
+
+        if loss <= 1.:
+            test_scores = run_epoch([test_dataloader], False, "Evaluation", epoch, 0, model, 
                     SimpleLossCompute(model.generator, criterion, None), metric, tracker)
 
-                if best_scores["cer"] > val_scores["cer"]:
-                    best_scores = val_scores
-                    torch.save({
-                        "vocab": vocab,
-                        "state_dict": model.state_dict(),
-                        "model_opt": model_opt,
-                        "val_scores": val_scores,
-                    }, os.path.join(config.checkpoint_path, f"best_model_stage_{stage+1}.pth"))
-
+            if best_scores["cer"] > test_scores["cer"]:
+                best_scores = test_scores
                 torch.save({
                     "vocab": vocab,
                     "state_dict": model.state_dict(),
                     "model_opt": model_opt,
-                    "val_scores": val_scores,
-                }, os.path.join(config.checkpoint_path, f"last_model_stage_{stage+1}.pth"))
+                    "scores": test_scores,
+                }, os.path.join(config.checkpoint_path, "best_model.pth"))
 
-                print(f"CER on the val set: {val_scores['cer']} - WER on the val set: {val_scores['wer']}")
+            torch.save({
+                "vocab": vocab,
+                "state_dict": model.state_dict(),
+                "model_opt": model_opt,
+                "scores": test_scores,
+            }, os.path.join(config.checkpoint_path, "last_model.pth"))
 
-                test_scores = run_epoch([test_dataloader], False, "Evaluation", epoch, 0, stage, model, 
-                        SimpleLossCompute(model.generator, criterion, None), metric, tracker)
+            print(f"CER on the test set: {test_scores['cer']} - WER on the test set: {test_scores['wer']}")
 
-                if best_test_scores["cer"] > test_scores["cer"]:
-                    best_test_scores = test_scores
+        print("*"*13)
 
-                print(f"CER on the test set: {test_scores['cer']} - WER on the test set: {test_scores['wer']}")
-
-            print("*"*13)
-            from_fold = 0 # start a new epoch
-
-        print(f"Stage {stage+1} completed. Scores on test set: CER = {best_test_scores['cer']} - WER = {best_test_scores['wer']}.")
-        print("="*23)
-
-        # swapping folds
-        for idx in range(len(folds)):
-            tmp_fold = folds[idx]
-            folds[idx] = folds[idx - 1]
-            folds[idx-1] = tmp_fold
-
-        # saving for the new swapped folds
-        pickle.dump(folds, open(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl"), "wb"))
+    print(f"Training completed. Best scores on test set: CER = {best_scores['cer']} - WER = {best_scores['wer']}.")
 
 if __name__=='__main__':
 

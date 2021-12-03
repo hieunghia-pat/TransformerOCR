@@ -5,7 +5,7 @@ image_dir = "../UIT_HWDB_line_syn"
 image_size = (1024, 64)
 
 ## training configuration
-max_epoch = 500
+max_epoch = 100
 learning_rate = 5e-4
 checkpoint_path = "/content/gdrive/MyDrive/TransformerOCR/saved_models"
 start_from = None
