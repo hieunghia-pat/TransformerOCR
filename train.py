@@ -121,7 +121,7 @@ def train():
         folds = train_dataset.get_folds(k=10)
         pickle.dump(folds, open(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl"), "wb"))
 
-    test_dataloder = DataLoader(test_dataset, 
+    test_dataloader = DataLoader(test_dataset, 
                                 batch_size=config.batch_size, 
                                 shuffle=True, 
                                 collate_fn=collate_fn)
@@ -138,6 +138,10 @@ def train():
                 "wer": float("inf")
             }
 
+        best_test_scores = {
+            "cer": 0,
+            "wer": 0
+        }
         for epoch in range(from_epoch, config.max_epoch):
             loss = run_epoch(folds[:-1], True, "Training", epoch, from_fold, stage, model, 
                 SimpleLossCompute(model.generator, criterion, model_opt), metric, tracker)
@@ -167,14 +171,20 @@ def train():
                     "val_scores": val_scores,
                 }, os.path.join(config.checkpoint_path, f"last_model_stage_{stage+1}.pth"))
 
-            print(f"CER: {val_scores['cer']} - WER: {val_scores['wer']}")
+                print(f"CER on the val set: {val_scores['cer']} - WER on the val set: {val_scores['wer']}")
+
+                test_scores = run_epoch([test_dataloader], False, "Evaluation", epoch, 0, stage, model, 
+                        SimpleLossCompute(model.generator, criterion, None), metric, tracker)
+
+                if best_test_scores["cer"] > test_scores["cer"]:
+                    best_test_scores = test_scores
+
+                print(f"CER on the test set: {test_scores['cer']} - WER on the test set: {test_scores['wer']}")
+
             print("*"*13)
             from_fold = 0 # start a new epoch
 
-        test_scores = run_epoch([test_dataloder], False, "Evaluation", epoch, 0, stage, model, 
-                SimpleLossCompute(model.generator, criterion, None), metric, tracker)
-
-        print(f"Stage {stage+1} completed. Scores on test set: CER = {test_scores['cer']} - WER = {test_scores['wer']}.")
+        print(f"Stage {stage+1} completed. Scores on test set: CER = {best_test_scores['cer']} - WER = {best_test_scores['wer']}.")
         print("="*23)
 
         # swapping folds
