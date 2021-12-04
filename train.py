@@ -162,6 +162,7 @@ def train():
             print(f"CER on the test set: {test_scores['cer']} - WER on the test set: {test_scores['wer']}")
 
         print("*"*13)
+        from_fold = 0
 
     print(f"Training completed. Best scores on test set: CER = {best_scores['cer']} - WER = {best_scores['wer']}.")
 
