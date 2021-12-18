@@ -69,7 +69,7 @@ def run_epoch(loaders, train, prefix, epoch, fold, model, loss_compute, metric, 
                 "fold": fold_idx,
                 "state_dict": model.state_dict(),
                 "loss_tracker": loss_tracker,
-            }, os.path.join(config.tmp_checkpoint_path, "last_model.pth"))
+            }, os.path.join(config.checkpoint_path, "last_model.pth"))
 
     if not train:
         return {
@@ -151,13 +151,6 @@ def train():
                     "model_opt": model_opt,
                     "scores": test_scores,
                 }, os.path.join(config.checkpoint_path, "best_model.pth"))
-
-            torch.save({
-                "vocab": vocab,
-                "state_dict": model.state_dict(),
-                "model_opt": model_opt,
-                "scores": test_scores,
-            }, os.path.join(config.checkpoint_path, "last_model.pth"))
 
             print(f"CER on the test set: {test_scores['cer']} - WER on the test set: {test_scores['wer']}")
 

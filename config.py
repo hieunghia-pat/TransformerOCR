@@ -25,4 +25,3 @@ smoothing = 0.2
 ## configure for debug only
 debug = True
 save_per_iter = 100
-tmp_checkpoint_path = "/content/gdrive/MyDrive/TransformerOCR/tmp_saved_models"
