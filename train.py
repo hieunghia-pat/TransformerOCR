@@ -7,6 +7,7 @@ from data_utils.vocab import Vocab
 from model.transformer import make_model
 import os
 from loss_utils.LabelSmoothingLoss import LabelSmoothing, SimpleLossCompute
+from loss_utils.WrappedOptim import WrappedOptim
 from data_utils.dataloader import Batch, OCRDataset, collate_fn
 from tqdm import tqdm
 
@@ -98,7 +99,8 @@ def train():
     criterion = LabelSmoothing(size=len(vocab.stoi), padding_idx=vocab.padding_idx, smoothing=config.smoothing)
     criterion.to(device)
 
-    model_opt = torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9)
+    model_opt = WrappedOptim(config.d_model, config.factor, config.warmup, 
+                                torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9))
 
     if config.start_from:
         saved_info = torch.load(config.start_from, map_location=device)
