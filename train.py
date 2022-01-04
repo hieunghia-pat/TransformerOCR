@@ -73,7 +73,7 @@ def run_epoch(loaders, train, prefix, epoch, fold, model, loss_compute, metric, 
             }, os.path.join(config.checkpoint_path, "last_model.pth"))
 
             torch.save({
-                "state_dict": loss_compute.optimizer.state_dict()
+                "state_dict": loss_compute.opt.optimizer.state_dict()
             }, config.saved_optimizer)
 
     if not train:
