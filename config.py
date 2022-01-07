@@ -6,7 +6,7 @@ image_size = (1024, 64)
 
 ## training configuration
 max_epoch = 100
-learning_rate = 0
+learning_rate = 5e-4
 checkpoint_path = "/content/gdrive/MyDrive/TransformerOCR/saved_models"
 saved_optimizer = None
 start_from = None
