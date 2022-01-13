@@ -35,7 +35,8 @@ class SimpleLossCompute:
         loss = self.criterion(x.contiguous().view(-1, x.size(-1)), 
                               y.contiguous().view(-1)) / norm
         if self.opt is not None:
-            self.opt.optimizer.zero_grad()
+            # self.opt.optimizer.zero_grad()
+            self.opt.zero_grad()
             loss.backward()
             self.opt.step()
         return loss

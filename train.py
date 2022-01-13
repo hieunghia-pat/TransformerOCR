@@ -72,9 +72,9 @@ def run_epoch(loaders, train, prefix, epoch, fold, model, loss_compute, metric, 
                 "loss_tracker": loss_tracker,
             }, os.path.join(config.checkpoint_path, "last_model.pth"))
 
-            torch.save({
-                "state_dict": loss_compute.opt.optimizer.state_dict()
-            }, config.saved_optimizer)
+            # torch.save({
+            #     "state_dict": loss_compute.opt.optimizer.state_dict()
+            # }, config.saved_optimizer)
 
     if not train:
         return {
@@ -103,10 +103,11 @@ def train():
     criterion = LabelSmoothing(size=len(vocab.stoi), padding_idx=vocab.padding_idx, smoothing=config.smoothing)
     criterion.to(device)
 
-    model_opt = WrappedOptim(config.d_model, config.factor, config.warmup, 
-                                torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9))
-    if os.path.isfile(config.saved_optimizer):
-        model_opt.optimizer.load_state_dict(torch.load(config.optimizer)["state_dict"])
+    # model_opt = WrappedOptim(config.d_model, config.factor, config.warmup, 
+    #                             torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9))
+    model_opt = torch.optim.Adam(model.parameters(), lr=config.learning_rate, betas=(0.9, 0.98), eps=1e-9)
+    # if os.path.isfile(config.saved_optimizer):
+    #     model_opt.optimizer.load_state_dict(torch.load(config.optimizer)["state_dict"])
 
     if config.start_from:
         saved_info = torch.load(config.start_from, map_location=device)
