@@ -91,8 +91,8 @@ def train():
     else:
         vocab = pickle.load(open(os.path.join(config.checkpoint_path, f"vocab_{config.out_level}.pkl"), "rb"))
 
-    train_dataset = OCRDataset(dir=os.path.join(config.train_image_dirs, "train_data"), image_size=config.image_size, out_level=config.out_level, vocab=vocab)
-    test_dataset = OCRDataset(dir=os.path.join(config.test_image_dirs, "test_data"), image_size=config.image_size, out_level=config.out_level, vocab=vocab)
+    train_dataset = OCRDataset(config.train_image_dirs, image_size=config.image_size, out_level=config.out_level, vocab=vocab)
+    test_dataset = OCRDataset(config.test_image_dirs, image_size=config.image_size, out_level=config.out_level, vocab=vocab)
     metric = Metrics(vocab)
     tracker = Tracker()
     
