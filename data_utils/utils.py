@@ -214,6 +214,25 @@ def collate_fn(samples):
     return images, tokens_tensor, shifted_tokens_tensor
 
 def preprocess_sentence(sentence, level="character"):
+    sentence = re.sub(r"[“”]", "\"", sentence)
+    sentence = re.sub(r"!", " !", sentence)
+    sentence = re.sub(r"\?", " ?", sentence)
+    sentence = re.sub(r":", " :", sentence)
+    sentence = re.sub(r";", " ;", sentence)
+    sentence = re.sub(r",", " ,", sentence)
+    sentence = re.sub(r"\"", " \" ", sentence)
+    sentence = re.sub(r"'", " '", sentence)
+    sentence = re.sub(r"\(", " ( ", sentence)
+    sentence = re.sub(r"\[", " [ ", sentence)
+    sentence = re.sub(r"\)", " ) ", sentence)
+    sentence = re.sub(r"\]", " ] ", sentence)
+    sentence = re.sub(r"/", " / ", sentence)
+    sentence = re.sub(r"\.", " . ", sentence)
+    sentence = re.sub(r"\$", " $ ", sentence)
+    sentence = re.sub(r"\&", " & ", sentence)
+    sentence = re.sub(r"\*", " * ", sentence)
+    sentence = " ".join(sentence.strip().split()) # remove duplicated spaces
+
     if level == "character":
         tokens = list(sentence.strip())
     else:

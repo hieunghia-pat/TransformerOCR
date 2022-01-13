@@ -15,12 +15,12 @@ from data_utils.vocab import Vocab
 import config
 
 class OCRDataset(Dataset):
-    def __init__(self, dir, image_size, out_level, vocab=None):
+    def __init__(self, dirs, image_size, out_level, vocab=None):
         super(OCRDataset, self).__init__()
         self.size = image_size
         self.out_level = out_level
         self.vocab = vocab if vocab is not None else Vocab(dir, out_level)
-        self.get_groundtruth(dir)
+        self.get_groundtruth(dirs)
 
     def __len__(self):
         return len(self.samples)
@@ -63,17 +63,18 @@ class OCRDataset(Dataset):
         
         return img, tokens, shifted_right_tokens
 
-    def get_groundtruth(self, img_dir):
+    def get_groundtruth(self, image_dirs):
         self.max_len = 0
         self.samples = []
 
-        for folder in os.listdir(img_dir):
-            labels = json.load(open(os.path.join(img_dir, folder, "label.json")))
-            for img_file, label in labels.items():
-                label = preprocess_sentence(label, self.vocab.out_level)
-                self.samples.append({"image": os.path.join(img_dir, folder, img_file), "label": label})
-                if self.max_len < len(label) + 2:
-                    self.max_len = len(label) + 2
+        for image_dir in image_dirs:
+            for folder in os.listdir(image_dir):
+                labels = json.load(open(os.path.join(image_dir, folder, "label.json")))
+                for img_file, label in labels.items():
+                    label = preprocess_sentence(label, self.vocab.out_level)
+                    self.samples.append({"image": os.path.join(image_dir, folder, img_file), "label": label})
+                    if self.max_len < len(label) + 2:
+                        self.max_len = len(label) + 2
 
     def get_folds(self, k=5) -> List[DataLoader]:
         fold_size = len(self) // k

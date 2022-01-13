@@ -1,5 +1,6 @@
 import torch
 from data_utils.vector import Vectors, pretrained_aliases
+from data_utils.utils import preprocess_sentence
 from collections import defaultdict, Counter
 import logging
 import six
@@ -20,7 +21,7 @@ class Vocab(object):
             numerical identifiers.
         itos: A list of token strings indexed by their numerical identifiers.
     """
-    def __init__(self, img_dir, out_level, max_size=None, min_freq=1, specials=['<pad>', "<sos>", "<eos>"],
+    def __init__(self, image_dirs, out_level, max_size=None, min_freq=1, specials=['<pad>', "<sos>", "<eos>"],
                  vectors=None, unk_init=None, vectors_cache=None):
         """Create a Vocab object from a collections.Counter.
         Arguments:
@@ -42,7 +43,7 @@ class Vocab(object):
             vectors_cache: directory for cached vectors. Default: '.vector_cache'
         """ 
         self.out_level = out_level
-        self.freqs = self.make_vocab(img_dir)
+        self.freqs = self.make_vocab(image_dirs)
         counter = self.freqs.copy()
         min_freq = max(min_freq, 1)
 
@@ -78,22 +79,14 @@ class Vocab(object):
         else:
             assert unk_init is None and vectors_cache is None
 
-    def make_vocab(self, img_dir):
-        splits = ["train_data", "test_data"]
-        vocab_set = set()
+    def make_vocab(self, image_dirs):
         counter = Counter()
-        for split in splits:
-            parent_folder = os.path.join(img_dir, split)
-            for folder in os.listdir(parent_folder):
-                labels = json.load(open(os.path.join(parent_folder, folder, "label.json")))
+        for image_dir in image_dirs:
+            for folder in os.listdir(image_dir):
+                labels = json.load(open(os.path.join(image_dir, folder, "label.json")))
                 for label in labels.values():
-                    label = " ".join(label.split())
-                    if self.out_level == "character":
-                        vocab_set.update(list(label))
-                        counter.update(list(label))
-                    else:
-                        vocab_set.update(label.split())
-                        counter.update(label.split())
+                    tokens = preprocess_sentence(label, self.out_level)
+                    counter.update(tokens)
 
         return counter
 
