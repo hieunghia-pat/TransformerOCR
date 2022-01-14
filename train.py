@@ -126,7 +126,7 @@ def train():
         pickle.dump(folds, open(os.path.join(config.checkpoint_path, f"folds_{config.out_level}.pkl"), "wb"))
 
     test_dataloader = DataLoader(test_dataset, 
-                                batch_size=config.batch_size, 
+                                batch_size=config.batch_test, 
                                 shuffle=True, 
                                 collate_fn=collate_fn)
 

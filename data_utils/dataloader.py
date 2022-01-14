@@ -84,7 +84,7 @@ class OCRDataset(Dataset):
         loaders = []
         for subdataset in subdatasets:
             loaders.append(DataLoader(subdataset, 
-                                        batch_size=config.batch_size, 
+                                        batch_size=config.batch_train, 
                                         shuffle=True, 
                                         collate_fn=collate_fn))
 

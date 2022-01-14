@@ -1,10 +1,18 @@
 ## dataset configuartion
-batch_size = 16
+batch_train = 4
+batch_test = 1
 out_level = "character"
-image_dirs = ["../UIT-HWDB-dataset/UIT_HWDB_line/train_data"] # for making vocab
-train_image_dirs = ["../UIT-HWDB-dataset/UIT_HWDB_line/train_data"] # for training
+image_dirs = [
+                "../UIT-HWDB-dataset/UIT_HWDB_line/train_data",
+                "../UIT-HWDB-dataset/UIT_HWDB_line/test_data",
+                "../UIT-HWDB-dataset/UIT_HWDB_line_syn"
+            ] # for making vocab
+train_image_dirs = [
+                        "../UIT-HWDB-dataset/UIT_HWDB_line/train_data",
+                        "../UIT-HWDB-dataset/UIT_HWDB_line_syn"
+                    ] # for training
 test_image_dirs = ["../UIT-HWDB-dataset/UIT_HWDB_line/test_data"] # for testing
-image_size = (1024, 64)
+image_size = (2048, -1)
 
 ## training configuration
 max_epoch = 100
@@ -24,7 +32,7 @@ heads = 8
 beam_size = 2
 
 ## objective function configuration
-smoothing = 0.2
+smoothing = 0.1
 
 ## configure for debug only
 debug = True
