@@ -227,6 +227,7 @@ def preprocess_sentence(sentence, level="character"):
     sentence = re.sub(r"\)", " ) ", sentence)
     sentence = re.sub(r"\]", " ] ", sentence)
     sentence = re.sub(r"/", " / ", sentence)
+    sentence = re.sub(r"\.\.\.", " ... ", sentence)
     sentence = re.sub(r"\.", " . ", sentence)
     sentence = re.sub(r"\$", " $ ", sentence)
     sentence = re.sub(r"\&", " & ", sentence)
