@@ -214,29 +214,30 @@ def collate_fn(samples):
     return images, tokens_tensor, shifted_tokens_tensor
 
 def preprocess_sentence(sentence, level="character"):
-    sentence = re.sub(r"[“”]", "\"", sentence)
-    sentence = re.sub(r"!", " !", sentence)
-    sentence = re.sub(r"\?", " ?", sentence)
-    sentence = re.sub(r":", " :", sentence)
-    sentence = re.sub(r";", " ;", sentence)
-    sentence = re.sub(r",", " ,", sentence)
-    sentence = re.sub(r"\"", " \" ", sentence)
-    sentence = re.sub(r"'", " '", sentence)
-    sentence = re.sub(r"\(", " ( ", sentence)
-    sentence = re.sub(r"\[", " [ ", sentence)
-    sentence = re.sub(r"\)", " ) ", sentence)
-    sentence = re.sub(r"\]", " ] ", sentence)
-    sentence = re.sub(r"/", " / ", sentence)
-    sentence = re.sub(r"\.", " . ", sentence)
-    sentence = re.sub(r"\. +\. +\. +", " ... ", sentence)
-    sentence = re.sub(r"\$", " $ ", sentence)
-    sentence = re.sub(r"\&", " & ", sentence)
-    sentence = re.sub(r"\*", " * ", sentence)
-    sentence = " ".join(sentence.strip().split()) # remove duplicated spaces
-
     if level == "character":
+        sentence = sentence = re.sub(r"[“”]", "\"", sentence)
         tokens = list(sentence.strip())
+        sentence = " ".join(sentence.strip().split()) # remove duplicated spaces
     else:
+        sentence = re.sub(r"[“”]", "\"", sentence)
+        sentence = re.sub(r"!", " ! ", sentence)
+        sentence = re.sub(r"\?", " ? ", sentence)
+        sentence = re.sub(r":", " : ", sentence)
+        sentence = re.sub(r";", " ; ", sentence)
+        sentence = re.sub(r",", " , ", sentence)
+        sentence = re.sub(r"\"", " \" ", sentence)
+        sentence = re.sub(r"'", " ' ", sentence)
+        sentence = re.sub(r"\(", " ( ", sentence)
+        sentence = re.sub(r"\[", " [ ", sentence)
+        sentence = re.sub(r"\)", " ) ", sentence)
+        sentence = re.sub(r"\]", " ] ", sentence)
+        sentence = re.sub(r"/", " / ", sentence)
+        sentence = re.sub(r"\.", " . ", sentence)
+        sentence = re.sub(r".\. *\. *\. *", " ... ", sentence)
+        sentence = re.sub(r"\$", " $ ", sentence)
+        sentence = re.sub(r"\&", " & ", sentence)
+        sentence = re.sub(r"\*", " * ", sentence)
+        sentence = " ".join(sentence.strip().split()) # remove duplicated spaces
         tokens = sentence.strip().split()
 
     return tokens
